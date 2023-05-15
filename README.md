@@ -1,8 +1,10 @@
 # ICQF
+
 Implementation of Interpretability Constrained Questionnaire Factorization
 ---
 
 ### Prerequisites
+
 The `environment.yml` records all libraries used to reproduce the environment.
 ---
 
