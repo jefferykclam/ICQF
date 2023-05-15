@@ -16,7 +16,7 @@ For readability, the evaluation are implemented as jupyter notebook for illustra
 
 `synthetic_questionnaire.ipynb` serves as a standalone demonstration the ICQF applied on a synthetic questionnaire. 
 
-We simulate a $200 x 100$ data matrix with intrinsic dimension 10. Noise is added with $\delta = 0.1$. In the manuscript, we use the function `BCV` to run `MF_model` under different configuration of (dimension, $\beta_W$ and $\beta_Q$) for hyperparameter optimization. In the following, we demonstrate the use of `MF_model` with optimal setting detected.
+We simulate a $200 x 100$ data matrix with intrinsic dimension 10. Noise is added with $\delta = 0.1$. `BCV.py` contains the implementation of Blockwise Cross-Validation) which is used for detecting optimal number of latent factors. We use the function `BCV.py` to run `MF_model.py` under different configuration of (dimension, $\beta_W$ and $\beta_Q$) for hyperparameter optimization. In this demonstration, optimal setting is used.
 
 For `BCV.py`, as it runs `MF_model.py` multiple times, we recommend running it as batch jobs.
 
