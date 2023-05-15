@@ -1,12 +1,8 @@
 # ICQF
-
 Implementation of Interpretability Constrained Questionnaire Factorization
----
 
 ### Prerequisites
-
 The `environment.yml` records all libraries used to reproduce the environment.
----
 
 ### Remark
 Given that both HBN and ABCD dataset require the acceptance of user agreement, we are not allowed to share both raw and pre-processed data directly.
