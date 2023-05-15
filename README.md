@@ -8,7 +8,7 @@ The `environment.yml` records all libraries used to reproduce the environment.
 - Given that both HBN and ABCD dataset require the acceptance of user agreement, we are not allowed to share both raw and pre-processed data directly.
 - To reproduce the results reported in the manuscript, data should be downloaded and preprocessed ahead of running the code. Please visit https://healthybrainnetwork.org/ and https://abcdstudy.org/ for more information on requesting the data.
 
-Nevertheless, the preprocessing demonstration on CBCL-HBN questionnaire can be found in `/data/HBN/HBN_loaders/CBCL.ipynb`
+Nevertheless, the preprocessing demonstration on CBCL-HBN questionnaire can be found in `/data/HBN/HBN_loaders/CBCL.ipynb`.
 
 For readability, the evaluation are implemented as jupyter notebook for illustration purpose.
 
@@ -34,6 +34,6 @@ In the following, we use HBN dataset as an example for instruction.
 
 2. Process the information as demonstrated in `./data/HBN/HBN_loaders/CBCL.ipynb`.
 
-3. Run `CBCL-HBN_facroize.ipynb` for both model training and model inference
+3. Run `CBCL-HBN_facroize.ipynb` for both model training and model inference.
 
-4. Evaluate the model with `CBCL-HBN_evaluate.ipynb`
+4. Evaluate the model with `CBCL-HBN_evaluate.ipynb`.
