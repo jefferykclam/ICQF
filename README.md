@@ -10,7 +10,7 @@ The `environment.yml` records all libraries used to reproduce the environment.
 
 We simulate a $200 \times 100$ data matrix with intrinsic dimension 10. Noise is added with $\delta = 0.1$. `BCV.py` contains the implementation of Blockwise Cross-Validation) which is used for detecting optimal number of latent factors. We use the function `BCV.py` to run `MF_model.py` under different configuration of (dimension, $\beta_W$ and $\beta_Q$) for hyperparameter optimization. In this demonstration, optimal setting is used.
 
-![synthetic_example](/Users/lamk5/My Drive/GitProjects/ICQF/figure/synthetic_example.png)
+![synthetic_example](./figure/synthetic_example.png)
 
 For `BCV.py`, as it runs `MF_model.py` multiple times, we recommend running it as batch jobs.
 
