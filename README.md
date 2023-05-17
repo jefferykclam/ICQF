@@ -8,11 +8,31 @@ The `environment.yml` records all libraries used to reproduce the environment.
 
 `synthetic_questionnaire.ipynb` serves as a standalone demonstration the ICQF applied on a synthetic questionnaire. 
 
-We simulate a $200 \times 100$ data matrix with intrinsic dimension 10. Noise is added with $\delta = 0.1$. `BCV.py` contains the implementation of Blockwise Cross-Validation) which is used for detecting optimal number of latent factors. We use the function `BCV.py` to run `MF_model.py` under different configuration of (dimension, $\beta_W$ and $\beta_Q$) for hyperparameter optimization. In this demonstration, optimal setting is used.
+We simulate a $200 \times 100$ data matrix with intrinsic dimension 10. Noise is added with $\delta = 0.1$. Denote the data matrix by $M$. Suppose all entries in $M$ are available, the mask matrix $\mathcal{M}$ will be of the same size as $M$, and with all ones. To perform ICQF, we simply import the function
+
+```python
+from src.MF_algorithm import MF_model
+```
+
+and run
+
+```python
+model = MF_model(M, # The data matrix
+                 np.ones_like(M), # mask matrix indicating availability of entries
+                 10, # dimension / number of latent factors
+                 regularizer=1, # L-1 or L-2 regularizer
+                 W_upperbd=(True, 1.0), # upper bound for W, (False, 0) = no constraint
+                 Q_upperbd=(True, 100.0), # upper bound for Q
+                 M_upperbd=(True, np.max(M)), # upper bound for the reconstruct matrix
+                 W_beta=0.1, Q_beta=0.1) # regularizer parameter
+MF_data = model.decomposition()
+```
+
+Resultant $W$ and $Q$ can be access by calling `MF_data.W` and `MF_data.Q` respectively. Figure below visualize the factorization result of the synthetic example obtained by ICQF (top row: ground-truth, bottom row: factorization estimation).
 
 ![synthetic_example](./figure/synthetic_example.png)
 
-For `BCV.py`, as it runs `MF_model.py` multiple times, we recommend running it as batch jobs.
+`BCV.py` contains the implementation of Blockwise Cross-Validation) which is used for detecting optimal number of latent factors. We use the function `BCV.py` to run `MF_model.py` under different configuration (dimension, $\beta_W$ and $\beta_Q$) for hyperparameter optimization. In this demonstration, optimal setting is used. For `BCV.py`, as it runs `MF_model.py` multiple times, we recommend running it as batch jobs.
 
 ### Remark
 
