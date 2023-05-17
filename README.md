@@ -4,10 +4,6 @@ Implementation of Interpretability Constrained Questionnaire Factorization
 ### Prerequisites
 The `environment.yml` records all libraries used to reproduce the environment.
 
-### Remark
-- Given that both HBN and ABCD dataset require the acceptance of user agreement, we are not allowed to share both raw and pre-processed data directly.
-- To reproduce the results reported in the manuscript, data should be downloaded and preprocessed ahead of running the code. Please visit https://healthybrainnetwork.org/ and https://abcdstudy.org/ for more information on requesting the data. Nevertheless, the preprocessing demonstration on CBCL-HBN questionnaire can be found in `/data/HBN/HBN_loaders/CBCL.ipynb`. Different questionnaires in HBN dataset can be processed similarly. As subjects responding to different questionnaires are partially overlapped, we also provide an illustration on how multiple questionnaires should be concatenated, see `/data/HBN/HBN_merge_questionnaires.ipynb` for more information.
-
 ### Getting start
 
 `synthetic_questionnaire.ipynb` serves as a standalone demonstration the ICQF applied on a synthetic questionnaire. 
@@ -16,7 +12,10 @@ We simulate a $200 \times 100$ data matrix with intrinsic dimension 10. Noise is
 
 For `BCV.py`, as it runs `MF_model.py` multiple times, we recommend running it as batch jobs.
 
+### Remark
 
+- Given that both HBN and ABCD dataset require the acceptance of user agreement, we are not allowed to share both raw and pre-processed data directly.
+- To reproduce the results reported in the manuscript, data should be downloaded and preprocessed ahead of running the code. Please visit https://healthybrainnetwork.org/ and https://abcdstudy.org/ for more information on requesting the data. Nevertheless, the preprocessing demonstration on CBCL-HBN questionnaire can be found in `/data/HBN/HBN_loaders/CBCL.ipynb`. Different questionnaires in HBN dataset can be processed similarly. As subjects responding to different questionnaires are partially overlapped, we also provide an illustration on how multiple questionnaires should be concatenated, see `/data/HBN/HBN_merge_questionnaires.ipynb` for more information.
 
 
 ### Model evaluation on CBCL-HBN questionnaire
