@@ -80,9 +80,9 @@ $$
 $$
 such that
 
-- $[W, C] Q^{T} = Z, \ \mathcal{Z} = \left\{ Z | \ \min(M) \leq Z_{ij} \leq \max(M)\right\} $
-- $\mathcal{Q} = \left\{ Q | \ 0 \leq Q_{ij} \leq Q_{bd}\right\}$ 
-- $\mathcal{W} = \left\{ W | \ 0 \leq W_{ij} \leq W_{bd} \right\}$
+- $ [W, C] Q^{T} = Z, \ \mathcal{Z} = \{ Z | \ \min(M) \leq Z_{ij} \leq \max(M)\}$
+- $\mathcal{Q} = \{ Q | \ 0 \leq Q_{ij} \leq Q_{bd}\}$ 
+- $\mathcal{W} = \{ W | \ 0 \leq W_{ij} \leq W_{bd} \}$
 
 for some optional upper bounds $Q_{bd}, W_{bd}$ for $Q$ and $W$ respectively, where
 
