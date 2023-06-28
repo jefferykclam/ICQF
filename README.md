@@ -29,7 +29,8 @@ closed beta version for ICQF package
 - `min_iter` : **int, default=10**. Minimum number of iteration..
 - `max_iter` : **int, default=200**. Maximum number of itererations.
 - `admm_iter` : **int, default=5**. Number of ADMM iterations if `method`='hybrid' is used. For more details on the 'hybrid' solver, see **Methods** section.
-- `tol` : **float, default 1e-4**. Tolerance of the stopping criterion.  (iteration stop when the relative error between successive iteration  $<$ `tol`).
+- `tol` : **float, default 1e-4**. Tolerance of the stopping criterion (relative error between successive iteration ).
+- `verbose` : **int, default=0**. Whether to be verbose.
 
 #### Attributes
 
