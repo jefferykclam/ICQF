@@ -41,7 +41,7 @@ closed beta version for ICQF package
 
 Numerical solver to use for solving the subproblems:
 - For `regularizer`=1, the `W` and `Q` subproblems become (constrained) LASSO problems.
-- For `regularizer’=2, the `W` and `Q` subproblems become (constrained) quadratic programming.
+- For `regularizer`=2, the `W` and `Q` subproblems become (constrained) quadratic programming.
 
 Solvers:
 - ‘admm’ : ADMM algorithm to solve the subproblems.
