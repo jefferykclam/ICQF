@@ -81,7 +81,7 @@ $$
 such that
 
 - $[W, C] Q^{T} = Z,$
-- $ \mathcal{Z} = \lbrace Z  \vert  \text{min}(M) \leq Z_{ij} \leq \text{max}(M) \rbrace$
+- $ \mathcal{Z} = \lbrace Z  \vert \rbrace$
 - $\mathcal{Q} = \lbrace Q | \ 0 \leq Q_{ij} \leq Q_{bd} \rbrace$ 
 - $\mathcal{W} = \lbrace W | \ 0 \leq W_{ij} \leq W_{bd} \rbrace$
 
