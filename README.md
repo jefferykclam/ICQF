@@ -80,7 +80,7 @@ $$
 $$
 such that
 
-$1/2 \Vert \mathcal{M} \odot (M - Z) \Vert_F^2$
+$1/2 \Vert \mathcal{M} \odot (M - Z) \Vert_F^2 + \beta \cdot R(W, Q)$
 
 - $[W, C] Q^{T} = Z,$
 - $\text{min}(M) \leq Z_{ij} \leq \text{max}(M)$
