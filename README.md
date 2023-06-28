@@ -76,7 +76,7 @@ Lastly, we incorporate a vector of ones into $C$ to facilitate intercept modelin
 
 We seek to factorize the questionnaire matrix $M$ as the product of a $n \times k$ factor matrix $W \in [0,1]$, with the confound matrix $C \in [0,1]$ as optional additional columns, and a $m \times (k+c)$ loading matrix $Q := [{}^{R}\!Q, {}^{C}\!Q]$, with a loading pattern ${}^{R}\!Q$ over $m$ questions for each of the $k$ factors (and ${}^{C}\!Q$ for optional confounds). Our optimization problem minimizes the squared error of this factorization
 $$
-\underset{W \in \mathcal{W}, Q \in \mathcal{Q}, Z \in \mathcal{Z}}{\text{minimize}} \quad \quad 1/2 \left\Vert \mathcal{M}\odot (M - Z) \right\Vert_F^2 + \beta \cdot R(W, Q) 
+\underset{W \in \mathcal{W}, Q \in \mathcal{Q}, Z \in \mathcal{Z}}{\text{minimize}} \quad \quad 1/2 \Vert \mathcal{M}\odot (M - Z) \Vert_F^2 + \beta \cdot R(W, Q)
 $$
 such that
 
