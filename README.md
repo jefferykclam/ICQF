@@ -76,14 +76,21 @@ Lastly, we incorporate a vector of ones into $C$ to facilitate intercept modelin
 
 We seek to factorize the questionnaire matrix $M$ as the product of a $n \times k$ factor matrix $W \in [0,1]$, with the confound matrix $C \in [0,1]$ as optional additional columns, and a $m \times (k+c)$ loading matrix $Q := [{}^{R}\!Q, {}^{C}\!Q]$, with a loading pattern ${}^{R}\!Q$ over $m$ questions for each of the $k$ factors (and ${}^{C}\!Q$ for optional confounds). Our optimization problem minimizes the squared error of this factorization
 $$
-\begin{align}
-\underset{W \in \mathcal{W}, Q \in \mathcal{Q}, Z \in \mathcal{Z}}{\text{minimize}} \quad \quad & 1/2 \left\Vert \mathcal{M}\odot (M - Z) \right\Vert_F^2 + \beta \cdot R(W, Q) \nonumber \\
-\text{such that} \quad \quad \quad & [W, C] Q^{T} = Z, \ \mathcal{Z} = \left\{ Z | \ \min(M) \leq Z_{ij} \leq \max(M)\right\} \nonumber \\
-& \mathcal{Q} = \left\{ Q | \ 0 \leq Q_{ij} \leq Q_{bd}\right\} \ \text{and} \  \mathcal{W} = \left\{ W | \ 0 \leq W_{ij} \leq W_{bd} \right\}
-\tag{ICQF}
-\end{align}
+\underset{W \in \mathcal{W}, Q \in \mathcal{Q}, Z \in \mathcal{Z}}{\text{minimize}} \quad \quad 1/2 \left\Vert \mathcal{M}\odot (M - Z) \right\Vert_F^2 + \beta \cdot R(W, Q) 
 $$
-for some optional upper bounds $Q_{bd}, W_{bd}$ for $Q$ and $W$ respectively. $R(W, Q)$ is the regularizer $R(W, Q) := \Vert W \Vert_{p, q} + \gamma \Vert Q \Vert_{p, q}$, $\gamma = \frac{n}{m}\max(M)$, where $\Vert A \Vert_{p, q} := ( \sum^m_{i=1} ( \sum^n_{j=1} |A_{ij}|^p )^{q/p} )^{1/q}$. In this package, $p=q=\{1,2\}$ for the $L_1$ and $L_2$ regularization.
+such that
+
+- $[W, C] Q^{T} = Z, \ \mathcal{Z} = \left\{ Z | \ \min(M) \leq Z_{ij} \leq \max(M)\right\} $
+- $\mathcal{Q} = \left\{ Q | \ 0 \leq Q_{ij} \leq Q_{bd}\right\}$ 
+- $\mathcal{W} = \left\{ W | \ 0 \leq W_{ij} \leq W_{bd} \right\}$
+
+for some optional upper bounds $Q_{bd}, W_{bd}$ for $Q$ and $W$ respectively, where
+
+$$R(W, Q) := \Vert W \Vert_{p, q} + \gamma \Vert Q \Vert_{p, q}$$
+
+with $\gamma = \frac{n}{m}\max(M)$. The matrix norm is defined as $\Vert A \Vert_{p, q} := ( \sum^m_{i=1} ( \sum^n_{j=1} |A_{ij}|^p )^{q/p} )^{1/q}$. 
+
+In this package, $p=q=\{1,2\}$ for the $L_1$ and $L_2$ regularization.
 
 
 
