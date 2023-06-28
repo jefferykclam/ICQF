@@ -80,10 +80,12 @@ $$
 $$
 such that
 
+$1/2 \Vert \mathcal{M} \odot (M - Z) \Vert_F^2$
+
 - $[W, C] Q^{T} = Z,$
-- $ \mathcal{Z} = \lbrace Z  \vert \rbrace$
-- $\mathcal{Q} = \lbrace Q | \ 0 \leq Q_{ij} \leq Q_{bd} \rbrace$ 
-- $\mathcal{W} = \lbrace W | \ 0 \leq W_{ij} \leq W_{bd} \rbrace$
+- $\text{min}(M) \leq Z_{ij} \leq \text{max}(M)$
+- $0 \leq Q_{ij} \leq Q_{bd}$ 
+- $0 \leq W_{ij} \leq W_{bd}$
 
 for some optional upper bounds $Q_{bd}, W_{bd}$ for $Q$ and $W$ respectively, where
 
