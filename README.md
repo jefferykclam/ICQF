@@ -76,13 +76,13 @@ Lastly, we incorporate a vector of ones into $C$ to facilitate intercept modelin
 
 We seek to factorize the questionnaire matrix $M$ as the product of a $n \times k$ factor matrix $W \in [0,1]$, with the confound matrix $C \in [0,1]$ as optional additional columns, and a $m \times (k+c)$ loading matrix $Q := [Q_R, Q_C]$, with a loading pattern $Q_R$ over $m$ questions for each of the $k$ factors (and $Q_C$ for optional confounds). Our optimization problem minimizes the squared error of this factorization
 $$
-\text{minimize}_{W, Q, Z} \quad  1/2 \Vert \mathcal{M}\odot (M - Z) \Vert_F^2 + \beta \cdot R(W, Q)
+\text{minimize}_{W, Q, Z} \quad  1/2 \Vert \mathcal{M} \odot (M - Z) \Vert_F^2 + \beta \cdot R(W, Q)
 $$
 such that
 
-- $ [W, C] Q^{T} = Z, \ \mathcal{Z} = \{ Z | \ \min(M) \leq Z_{ij} \leq \max(M)\}$
-- $\mathcal{Q} = \{ Q | \ 0 \leq Q_{ij} \leq Q_{bd}\}$ 
-- $\mathcal{W} = \{ W | \ 0 \leq W_{ij} \leq W_{bd} \}$
+- $ [W, C] Q^{T} = Z, \ \mathcal{Z} = \lbrace Z | \ \min(M) \leq Z_{ij} \leq \max(M) \rbrace$
+- $\mathcal{Q} = \lbrace Q | \ 0 \leq Q_{ij} \leq Q_{bd} \rbrace$ 
+- $\mathcal{W} = \lbrace W | \ 0 \leq W_{ij} \leq W_{bd} \rbrace$
 
 for some optional upper bounds $Q_{bd}, W_{bd}$ for $Q$ and $W$ respectively, where
 
