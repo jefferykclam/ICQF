@@ -40,7 +40,13 @@ closed beta version for ICQF package
 #### Methods
 
 Numerical solver to use for solving the subproblems:
-- 'admm' : 
+- For `regularizer`=1, the `W` and `Q` subproblems become (constrained) LASSO problems.
+- For `regularizer’=2, the `W` and `Q` subproblems become (constrained) quadratic programming.
+
+Solvers:
+- ‘admm’ : ADMM algorithm to solve the subproblems.
+- ‘cd’ : coordinate descent to solve the subproblems.
+- ‘hybrid’ : it utilizes a hybrid approach to address the subproblems. Initially, the solver operates similarly to the "admm" solver for the first 'admm_iter' iterations. Subsequently, the 'cd' algorithm is executed until the stopping criterion is met. This hybrid approach aims to prevent convergence to local minima while ensuring computational efficiency.
 
 #### Supports
 
