@@ -85,7 +85,7 @@ such that
 - $0 \leq Q_{ij} \leq Q_{bd}$ 
 - $0 \leq W_{ij} \leq W_{bd}$
 
-for some optional upper bounds $Q_{bd}, W_{bd}$ for $Q$ and $W$ respectively, where
+for some optional upper bounds $Q_{bd}, W_{bd}$ for $Q$ and $W$ respectively. The regularizer $R$ is defined as
 
 $$R(W, Q) := \Vert W \Vert_{p, q} + \gamma \Vert Q \Vert_{p, q}$$
 
