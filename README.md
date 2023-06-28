@@ -34,11 +34,13 @@ closed beta version for ICQF package
 
 #### Attributes
 
-- 'n_components_` : **int**. Latent dimension. If it was given, it is the same as the n`_components`. otherwise, it will be the dimension detected using `detect_dim` method.
+- `n_components_` : **int**. Latent dimension. If it was given, it is the same as the n`_components`. otherwise, it will be the dimension detected using `detect_dim` method.
 - `loss_history_` : **list**. Trend of the objective loss during the iteration.
-- 
 
 #### Methods
+
+Numerical solver to use for solving the subproblems:
+- 'admm' : 
 
 #### Supports
 
