@@ -63,12 +63,19 @@ Q = MF_data.Q
 
 #### Methods
 
-- `fit` :
-- `fit_transform` :
-- `transform` : 
-- `detect_dimension` : 
-
-
+- `fit(matrix_class, svd_components=None)` : Learn an ICQF model for the data stored as `matrix_class`. An SVD initialization can be provided via the `svd_components`, which is a tuple with two components. `svd_component[0]` and `svd_component[1]` correspond to the $S$ and $V^T$ of an SVD decomposition $USV^T$.
+- `fit_transform(matrix_class, svd_components=None)` :  Learn an ICQF model for the data stored as `matrix_class` and return the transformed data stored in the input `matrix_class` object.
+- `transform(matrix_class)` : Transform a data stored as `matrix_class` according to the fitted model. Specifically, the matrix `matrix_class.Q` (and if available `matrix_class.Qc`) is fixed during the transform.
+- `detect_dimension(matrix_class, dimension_list=None, W_beta_list=None, Q_beta_list=None, mask_type='random', repeat=5, nfold=10, random_fold=True, nrow=10, ncol=10)` : Detect the optimal configuration of latent dimension and regularization strength via blockwise cross validation. 
+  - `dimension_list` : **list[int], default=None**. List of integers to test for optimal latent dimension. If `None`, an automatic estimation of dimension $d$ using parallel analysis is performed and test the optimal dimension within the range $[ \max(d-10, 2), d+10]$.
+  - `W_beta_list` : **list[float], default=None**. List of floats to test for optimal regularization strength. If `None`, it tests the optimal regularization for $W$ within $[0.0, 0.01, 0.1, 0.2, 0.5]$.
+  - `Q_beta_list` : **list[float], default=None**. List of floats to test for optimal regularization strength. If `None`, it tests the optimal regularization for $Q$ within $[0.0, 0.01, 0.1, 0.2, 0.5]$.
+  - `mask_type` : **{'random', 'block'}, default='random'**. Ways to choose the sub-block matrix for cross validation. If `random`, `1/nfold` of entries will be choose random within the whole matrix as the cross-validation held-out set. If `block`, the data matrix will first be subdivided into `nrow` $\times$ `ncol` sub-blocks, then $\lfloor$ `nrow` $\times$ `ncol` / `nfold`  $\rfloor$ sub-blocks will be chosen as the cross-validation held-out set. [Future - mask type should also support group stratified splitting.] 
+  - `repeat` : **int, default=5**. Number of cross-validation for each configuration.
+  - `nfold` : **int, default=10**. Number of folds in cross-validation.
+  - `random_fold` : **boolean, default=True**. If `True`, only one random fold will be selected in each cross validation. The aim is to massively reduce the computation time. The optimal configuration tested under this setting serves as a rough estimation only. Used in care. If `False`, validation errors for each fold will be computed, yet the computation cost will be multiplied by `nfold`.
+  - `nrow` : **int, default=10**. Used for `mask_type='block'`. The data matrix will be divided into `nrow` blocks (first dimension).
+  - `ncol` : **int, default=10**. Used for `mask_type='block'`. The data matrix will be divided into `ncol` blocks (second dimension).
 
 
 
@@ -96,7 +103,7 @@ We store the data matrix as a customized `matrix_class` with the following input
 - `itemlist` : unique keys for item (column ID)
 - `subjlist` : unique keys for subject (row ID)
 
-Given a data matrix `M_raw` with indicator mask matrix `nan_mask` and confound matrix `confound_raw` , we can run to initialize the data class:
+Given a data matrix `M_raw` with indicator mask matrix `nan_mask` and confound matrix `confound_raw` , we can run the following code to initialize the data class:
 
 ```python
 MF_data = matrix_class(M_raw=M_raw, confound_raw=confound_raw, nan_mask=nan_mask)
