@@ -7,9 +7,19 @@ closed beta version for ICQF package
 
 
 
+
+
 ### Quick Example
 
-Given a data matrix `M`, we first construct the data class
+We first generate an synthetic example using `simulation` function from `util.generate_synthetic`:
+
+```python
+true_W, true_Q, _, M_clean, M, _ = simulation(2000, 100, 10)
+```
+
+The generated matrix has dimension $2000 \times 1000$ and the intrinsic latent diemnsion is 10.
+
+Given the data matrix `M`, we first construct the data class
 
 ```MF_data = matrix_class(M=M)``` 
 
@@ -17,12 +27,10 @@ and initialize the ICQF model:
 
 ```python
 clf = ICQF(n_components=10,
-           W_beta=0.1,
-           Q_beta=0.1,
            W_upperbd=(True, 1.0),
            M_upperbd=(True, np.max(MF_data.M)),
-           Q_upperbd=(True, 100),
-           method='admm', max_iter=200, min_iter=10, tol=1e-4)
+           Q_upperbd=(True, 100)
+          )
 ```
 
 ICQF is performed by
@@ -34,6 +42,35 @@ The matrix factorization results can be accessed via
 ```python
 W = MF_data.W
 Q = MF_data.Q
+```
+
+Qualitatively, we can compare with the ground-truth by showing them in parallel
+
+```
+show_synthetic_result(MF_data, true_W, true_Q)
+```
+
+<img src="README.assets/image-20230629180658304.png" alt="image-20230629180658304" style="zoom:67%;" />
+
+
+
+#### Data class
+
+We store the data matrix as a customized `matrix_class` with the following input attributes:
+
+- `M_raw` : the input data matrix.
+- `M` : the processed data matrix
+- `nan_mask` : an indicator matrix representing the availability of entries (=1) and missing entries (=0)
+- `confound_raw` : [optional] the input confound matrix 
+- `confound` : [optional] the processed confound matrix, columns are either one-hot encoded / rescaled to $[0, 1]$
+- `dataname` : dataset name
+- `itemlist` : unique keys for item (column ID)
+- `subjlist` : unique keys for subject (row ID)
+
+Given a data matrix `M_raw` with indicator mask matrix `nan_mask` and confound matrix `confound_raw` , we can run the following code to initialize the data class:
+
+```python
+MF_data = matrix_class(M_raw=M_raw, confound_raw=confound_raw, nan_mask=nan_mask)
 ```
 
 
@@ -90,36 +127,111 @@ Numerical solver to use for solving the subproblems. For `regularizer`=1, the `W
 
 
 
-#### Data class
-
-We store the data matrix as a customized `matrix_class` with the following input attributes:
-
-- `M_raw` : the input data matrix.
-- `M` : the processed data matrix
-- `nan_mask` : an indicator matrix representing the availability of entries (=1) and missing entries (=0)
-- `confound_raw` : [optional] the input confound matrix 
-- `confound` : [optional] the processed confound matrix, columns are either one-hot encoded / rescaled to $[0, 1]$
-- `dataname` : dataset name
-- `itemlist` : unique keys for item (column ID)
-- `subjlist` : unique keys for subject (row ID)
-
-Given a data matrix `M_raw` with indicator mask matrix `nan_mask` and confound matrix `confound_raw` , we can run the following code to initialize the data class:
-
-```python
-MF_data = matrix_class(M_raw=M_raw, confound_raw=confound_raw, nan_mask=nan_mask)
-```
-
-
-
 ### Examples
 
 #### Synthetic example with confounds
 
+Using the `simulation` function in `utils.generate_synthetic`, we can generate a synthetic example with confounds containing categorical and continuous variables (mimicing gender and age confounds)
+
+```python
+from src.data_class import matrix_class
+from src.ICQF import ICQF
+from utils.generate_synthetic import simulation, show_synthetic_result
+
+true_W, true_Q, confound_raw, M_clean, M, _ = simulation(2000, 100, 10, 50, density=0.3,
+                                                         noise=True, delta=0.1, 
+                                                         confound=True,
+                                                         visualize=True)
+```
+
+Instead of `None` in the **Quick example**, `confound_raw` is a $2000 \times 2$ matrix storing the categorical (first column) and continuous (second column) confounds:
+
+```python
+print(np.around(confound_raw,3))
+[[0.    0.   ]
+ [0.    0.001]
+ [0.    0.001]
+ ...
+ [1.    0.999]
+ [1.    0.999]
+ [1.    1.   ]]
+```
+
+
+
+<img src="README.assets/image-20230629170940164.png" alt="image-20230629170940164" style="zoom:67%;" />
+
+
+
+> The function `simulation` generates both the `confound_raw` and the matrix $C$ based on the following rules:
+>
+> - If the $j^{\text{th}}$ column `confound_raw`$_{[:,j]}$ is categorical, we convert it to indicator columns for each value (we have two categories in this example). The transformed columns are `10` and `12` respectively in the middle panel of the above figure. 
+> - If it is continuous, we first rescale it into $[0, 1]$ (where 0 and 1 are the minimum and maximum in the dataset), and replace it with two new columns, $C_{[:,j]}$ and $1 - C_{[:,j]}$. This mirroring procedure ensures that both directions of the confounding variables are considered (e.g. answer patterns more common the younger or the older the participants are). the transformed columns are `11` and `13` respectively in the middle panel of the above figure.
+>
+> Lastly, we incorporate a vector of ones into $C$ to facilitate intercept modeling of dataset wide answer patterns, which is the `14` column in the middle panel of the above figure.
+
+
+
+Similarly, we construct the correspond `matrix_class` object storing the data.
+
+```python
+MF_data = matrix_class(M=M, confound_raw=confound_raw)
+MF_data.check_input()
+```
+
+Then we setup the ICQF model:
+
+```python
+clf = ICQF(n_components=10,
+           W_beta=0.1,
+           Q_beta=0.1,
+           W_upperbd=(True, 1.0),
+           M_upperbd=(True, np.max(MF_data.M)),
+           Q_upperbd=(True, 100),
+           method='cd', max_iter=2000, min_iter=10, tol=1e-6, verbose=True)
+```
+
+and fit and transform the data matrix:
+
+```
+MF_data, loss = clf.fit_transform(MF_data)
+```
+
+We then compare with the ground-truth results qualitatively:
+
+```
+show_synthetic_result(MF_data, true_W, true_Q)
+```
+
+<img src="README.assets/image-20230629170912402.png" alt="image-20230629170912402" style="zoom:67%;" />
+
+
+
+#### Synthetic example with missing entries
+
+
+
+```python
+true_W, true_Q, confound_raw, M_clean, M, nan_mask = simulation(2000, 100, 10, 50, 
+                                                                density=0.3,
+                                                                noise=True, delta=0.1, 
+                                                                confound=True,
+                                                                missing_ratio=0.2,
+                                                                visualize=True)
+```
+
+
+
+```
+MF_data = matrix_class(M=M, confound_raw=confound_raw, nan_mask=nan_mask)
+MF_data.check_input()
+```
 
 
 
 
-#### Synthetic CBCL questionnaire factorization
+
+#### Synthetic CBCL questionnaire example
 
 
 
@@ -172,6 +284,24 @@ $$R(W, Q) := \Vert W \Vert_{p, q} + \gamma \Vert Q \Vert_{p, q}$$
 with $\gamma = \frac{n}{m}\max(M)$. The matrix norm is defined as $\Vert A \Vert_{p, q} := ( \sum^m_{i=1} ( \sum^n_{j=1} |A_{ij}|^p )^{q/p} )^{1/q}$. 
 
 In this package, $p=q=\{1,2\}$ for the $L_1$ and $L_2$ regularization.
+
+
+
+##### Subproblems $W$ and $Q$
+
+
+
+
+
+
+
+##### Subproblems $Z$
+
+
+
+
+
+
 
 
 
