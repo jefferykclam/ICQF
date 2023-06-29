@@ -287,23 +287,5 @@ In this package, $p=q=\{1,2\}$ for the $L_1$ and $L_2$ regularization.
 
 
 
-##### Subproblems $W$ and $Q$
-
-
-
-
-
-
-
-##### Subproblems $Z$
-
-
-
-
-
-
-
-
-
 ### Reference
 
