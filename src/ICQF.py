@@ -7,6 +7,7 @@ import pyximport
 pyximport.install()
 
 import numpy as np
+import itertools
 
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.utils.extmath import randomized_svd, safe_sparse_dot
@@ -341,7 +342,7 @@ class ICQF(TransformerMixin, BaseEstimator):
         self,
         n_components=None,
         *,
-        method='admm',
+        method='cd',
         W_beta=0.1,
         Q_beta=0.1,
         regularizer=1,
@@ -385,6 +386,10 @@ class ICQF(TransformerMixin, BaseEstimator):
             
             
         self.rng = check_random_state(self.random_state)
+        
+    def vprint(self, str):
+        if self.verbose==True:
+            print(str)
 
     def initialize(self, matrix_class, svd_components=None):
         
@@ -481,21 +486,14 @@ class ICQF(TransformerMixin, BaseEstimator):
                                                        gamma, -1,
                                                        False, self.rng)
         elif self.method == 'hybrid':
-            if self.iteration < self.admm_iter:
-                if self.regularizer == 1:
-                    _, MF_data.W = _admm_constrained_multilasso(MF_data.W,
-                                                                MF_data.Q.T,
-                                                                B,
-                                                                gamma,
-                                                                self.W_upperbd,
-                                                                self.tau)
-                if self.regularizer == 2:
-                    MF_data.W = _constrained_multiquadratic(MF_data.W,
+            if self.regularizer == 1:
+                _, MF_data.W = _admm_constrained_multilasso(MF_data.W,
                                                             MF_data.Q.T,
                                                             B,
                                                             gamma,
-                                                            self.W_upperbd)
-            else:
+                                                            self.W_upperbd,
+                                                            self.tau,
+                                                            max_iter=self.admm_iter)
                 MF_data.W = check_array(MF_data.W, order='C')
                 MF_data.Q = check_array(MF_data.Q, order='C')
                 B = check_array(B, order='C')
@@ -510,19 +508,23 @@ class ICQF(TransformerMixin, BaseEstimator):
                                                            self.regularizer,
                                                            gamma, -1,
                                                            False, self.rng)
+            if self.regularizer == 2:
+                MF_data.W = _constrained_multiquadratic(MF_data.W,
+                                                        MF_data.Q.T,
+                                                        B,
+                                                        gamma,
+                                                        self.W_upperbd)
                 
         return MF_data
     
     def _update_Q(self, MF_data, B, gamma):
         
-        QComp = MF_data.Q
-        WComp = MF_data.W
         if MF_data.C is not None:
             QComp = np.column_stack((MF_data.Q, MF_data.Qc))
             WComp = np.column_stack((MF_data.W, MF_data.C))
-        QComp = check_array(QComp, order='C')
-        WComp = check_array(WComp, order='C')
-        B = check_array(B, order='C')
+        else:
+            QComp = MF_data.Q
+            WComp = MF_data.W
         
         if self.method == 'admm':
             if self.regularizer == 1:
@@ -536,6 +538,10 @@ class ICQF(TransformerMixin, BaseEstimator):
                                                          self.Q_upperbd)
                         
         elif self.method == 'cd':
+            
+            QComp = check_array(QComp, order='C')
+            WComp = check_array(WComp, order='C')
+            B = check_array(B, order='C')
             if self.Q_upperbd[0] == True:
                 violation = _update_coordinate_descent(B.T, QComp, WComp,
                                                         self.regularizer,
@@ -549,17 +555,16 @@ class ICQF(TransformerMixin, BaseEstimator):
                                                         -1,
                                                         False, self.rng)
         elif self.method == 'hybrid':
-            if self.iteration < self.admm_iter:
-                if self.regularizer == 1:
-                    _, QComp = _admm_constrained_multilasso(QComp, WComp.T, B.T, 
-                                                            gamma,
-                                                            self.Q_upperbd,
-                                                            self.tau)
-                if self.regularizer == 2:
-                    QComp = self._constrained_multiquadratic(QComp, WComp.T, B.T,
-                                                             gamma,
-                                                             self.Q_upperbd)
-            else:
+            if self.regularizer == 1:
+                _, QComp = _admm_constrained_multilasso(QComp, WComp.T, B.T, 
+                                                        gamma,
+                                                        self.Q_upperbd,
+                                                        self.tau,
+                                                        max_iter=self.admm_iter)
+                
+                QComp = check_array(QComp, order='C')
+                WComp = check_array(WComp, order='C')
+                B = check_array(B, order='C')
                 if self.Q_upperbd[0] == True:
                     violation = _update_coordinate_descent(B.T, QComp, WComp,
                                                             self.regularizer,
@@ -572,6 +577,13 @@ class ICQF(TransformerMixin, BaseEstimator):
                                                             gamma,
                                                             -1,
                                                             False, self.rng)
+
+            if self.regularizer == 2:
+                QComp = self._constrained_multiquadratic(QComp, WComp.T, B.T,
+                                                         gamma,
+                                                         self.Q_upperbd,
+                                                         max_iter=self.admm_iter)
+
         
         else:
             raise ValueError("Unknown method.")
@@ -696,11 +708,9 @@ class ICQF(TransformerMixin, BaseEstimator):
         loss_history = []
 
         # tqdm setting
-        tqdm_iterator = trange(self.max_iter, desc='Loss', leave=True, disable=not self.verbose)
+        tqdm_iterator = trange(self.max_iter, desc='ICQF', leave=True, disable=not self.verbose)
 
         betaW = self.W_beta
-        # heuristic gamma (in the paper) is absorbed into Q's beta
-        
         if self.W_upperbd[0] == True:
             if self.Q_upperbd[0] == True:
                 magnitude_ratio = self.Q_upperbd[1]/self.W_upperbd[1]
@@ -711,107 +721,60 @@ class ICQF(TransformerMixin, BaseEstimator):
         
         betaQ = self.Q_beta * MF_data.W.shape[0]/MF_data.Q.shape[0] * magnitude_ratio
 
-        
         # Main iteration
         for i in tqdm_iterator:
+            tic = time.perf_counter()
             
-            tic_s1 = time.perf_counter()
-            # subproblem 1
             B = MF_data.Z + MF_data.aZ/self.rho
             if MF_data.C is not None:
                 B -= MF_data.C@(MF_data.Qc.T)
-            # B = check_array(B, order='C')
-            # gamma = betaW/self.rho
             
-            MF_data = self._update_W(MF_data, B, betaW/self.rho)
-            
-            
-#             violation = 0
-            
-#             if self.method == 'admm':
-#                 if self.regularizer == 1:
-#                     _, MF_data.W = _admm_constrained_multilasso(MF_data.W, MF_data.Q.T, B, gamma, self.W_upperbd, self.tau)
-#                 elif self.regularizer == 2:
-#                     MF_data.W = _constrained_multiquadratic(MF_data.W, MF_data.Q.T, B, gamma, self.W_upperbd)
-
-#             if self.method == 'cd':
-#                 if self.W_upperbd[0] == True:
-#                     violation += _update_coordinate_descent(B, MF_data.W, MF_data.Q, self.regularizer, gamma, self.W_upperbd[1], False, self.rng)
-#                 else:
-#                     violation += _update_coordinate_descent(B, MF_data.W, MF_data.Q, self.regularizer, gamma, -1, False, self.rng)  
-                                         
+            # subproblem 1
+            tic_s1 = time.perf_counter()
+            MF_data = self._update_W(MF_data, B, betaW/self.rho)            
             toc_s1 = time.perf_counter()
-            # print(f"subproblem 1 solving time[{self.method}] : {tic_s1-toc_s1:0.4f}s")
+            s1_time = tic_s1 - toc_s1
                     
-
-            tic_s2 = time.perf_counter()
-            # subproblem 2
-            # QComp = MF_data.Q
-            # WComp = MF_data.W
-            # if MF_data.C is not None:
-            #     QComp = np.column_stack((MF_data.Q, MF_data.Qc))
-            #     WComp = np.column_stack((MF_data.W, MF_data.C))
-            #     QComp = check_array(QComp, order='C')
-            #     WComp = check_array(WComp, order='C')
+            B = MF_data.Z + MF_data.aZ/self.rho
                 
-            # gamma = betaQ/self.rho
-            
+            # subproblem 2     
             if update_Q:
+                tic_s2 = time.perf_counter()       
                 MF_data = self._update_Q(MF_data, B, betaQ/self.rho)
-#                 if self.method == 'admm':
-#                     if self.regularizer == 1:
-#                         _, QComp = _admm_constrained_multilasso(QComp, WComp.T, B.T,  gamma, self.Q_upperbd, self.tau)
-#                     elif self.regularizer == 2:
-#                         QComp = self._constrained_multiquadratic(QComp, WComp.T, B.T, gamma, self.Q_upperbd)
-#                     else:
-#                         raise ValueError("Unknown regularizer.")
-                        
-#                 if self.method == 'cd':
-#                     if self.Q_upperbd[0] == True:
-#                         violation += _update_coordinate_descent(B.T, QComp, WComp, self.regularizer, gamma, self.Q_upperbd[1], False, self.rng)
-#                     else:
-#                         violation += _update_coordinate_descent(B.T, QComp, WComp, self.regularizer, gamma, -1, False, self.rng)
-#                     # violation += _update_coordinate_descent(MF_data.M.T, MF_data.Q, MF_data.W, self.regularizer, gamma, False, self.rng)
-#                     # print(f"violation: {violation}")
-                
-#                 MF_data.Q = QComp[:, :MF_data.Q.shape[1]]
-#                 if MF_data.C is not None:
-#                     MF_data.Qc = QComp[:, MF_data.Q.shape[1]:]
-
-            toc_s2 = time.perf_counter()
-            # print(f"subproblem 2solving time[{self.method}] : {tic_s2-toc_s2:0.4f}s")
+                toc_s2 = time.perf_counter()
+            s2_time = tic_s2 - toc_s2
             
-            
-            tic_s3 = time.perf_counter()
-            
-            # subproblem 3
             B = MF_data.W@(MF_data.Q.T)
             if MF_data.C is not None:
                 B += MF_data.C@(MF_data.Qc.T)
-            # B = check_array(B, order='C')
 
+            # subproblem 3
+            tic_s3 = time.perf_counter()
             MF_data.Z = self._update_Z(MF_data, B-MF_data.aZ/self.rho)
-
-
+            toc_s3 = time.perf_counter()
+            s3_time = tic_s3 - toc_s3
+            
             # auxiliary varibles update        
             MF_data.aZ += self.rho*(MF_data.Z - B)
-            
-            toc_s3 = time.perf_counter()
-            # print(f"olving time : {tic_s1-toc_s1:0.4f}s, {tic_s2-toc_s2:0.4f}s, {tic_s3-toc_s3:0.4f}s")
-            
             
             # Iteration info
             mismatch_loss, reg_loss = self._obj_func(MF_data, betaW, betaQ)
             loss_history.append((mismatch_loss+reg_loss, mismatch_loss, reg_loss))
-            tqdm_iterator.set_description("Loss: {:0.4}".format(loss_history[-1][0]))
+            toc = time.perf_counter()
+            if i > 0:
+                err_ratio = np.abs(loss_history[-1][0]-loss_history[-2][0])/np.abs(loss_history[-1][0])
+            else:
+                err_ratio = np.nan
+            message = f"loss={loss_history[-1][0]:0.3e}, tol={err_ratio:0.3e}, "
+            message += f"time/iter={toc-tic:0.2f}s ({s1_time:0.2f}s,{s2_time:0.2f}s,{s3_time:0.2f})"
+            tqdm_iterator.set_description(message)
             tqdm_iterator.refresh()
 
             # Check convergence
             if i > self.min_iter:
                 converged = True
-                if np.abs(loss_history[-1][0]-loss_history[-2][0])/np.abs(loss_history[-1][0]) < self.tol:
-                    if self.verbose:
-                        print('Algorithm converged with relative error < {}.'.format(self.tol))
+                if err_ratio < self.tol:
+                    self.vprint('Algorithm converged with relative error < {}.'.format(self.tol))
                     return MF_data, loss_history
                 else:
                     converged = False
@@ -842,32 +805,54 @@ class ICQF(TransformerMixin, BaseEstimator):
         return embedding_stat, MF_data
     
     
-    def detect_dim(self,
-                   MF_data,
-                   dimension_list=None,
-                   W_beta_list=None,
-                   Q_beta_list=None,
-                   mask_type='random',
-                   repeat=5,
-                   nfold=10,
-                   random_fold=True,
-                   nrow=10,
-                   ncol=10):
+    def detect_dimension(self,
+                         MF_data,
+                         dimension_list=None,
+                         W_beta_list=None,
+                         Q_beta_list=None,
+                         separate_beta=False,
+                         mask_type='random',
+                         repeat=5,
+                         nfold=10,
+                         random_fold=True,
+                         nrow=10,
+                         ncol=10):
 
-        if W_beta_list is None:
+        self.verbose = False
+        
+        if (W_beta_list is None) and (Q_beta_list is None):
             W_beta_list = [0.0, 0.01, 0.1, 0.2, 0.5]
+            Q_beta_list = [0.0, 0.01, 0.1, 0.2, 0.5]
+        elif (W_beta_list is not None) and (Q_beta_list is None):
+            if separate_beta:
+                assert isinstance(W_beta_list, list)
+                Q_beta_list = [0.0, 0.01, 0.1, 0.2, 0.5]
+            else:
+                Q_beta_list = W_beta_list
+        elif (W_beta_list is None) and (Q_beta_list is not None):
+            if separate_beta:
+                assert isinstance(Q_beta_list, list)
+                W_beta_list = [0.0, 0.01, 0.1, 0.2, 0.5]
+            else:
+                W_beta_list = Q_beta_list
         else:
             assert isinstance(W_beta_list, list)
-        if Q_beta_list is None:
-            Q_beta_list = [0.0, 0.01, 0.1, 0.2, 0.5]
-        else:
             assert isinstance(Q_beta_list, list)
-
-        print('estimate detection range')
+        
+        if separate_beta:
+            print('W_beta search space : ', W_beta_list)
+            print('Q_beta search space : ', Q_beta_list)
+        else:
+            print('shared beta search space : ', W_beta_list)
+                
+        if separate_beta: 
+            config_list = list(itertools.product(W_beta_list, Q_beta_list))
+        else:    
+            config_list = list(zip(W_beta_list, Q_beta_list))
         
         if dimension_list is not None:
             assert isinstance(dimension_list, (list, tuple, np.ndarray))
-            print('detection range: {} - {}'.format(dimension_list[0], dimension_list[-1]))
+            print('dimension detection range: {} - {}'.format(dimension_list[0], dimension_list[-1]))
         else:
             correlation = np.corrcoef(MF_data.M.T)
             # correction when some columns are completely zeros
@@ -879,14 +864,17 @@ class ICQF(TransformerMixin, BaseEstimator):
             horn_dim = np.sum(better > 0)
 
             dimension_list = np.arange(np.maximum(2,int(horn_dim)-10), int(horn_dim)+11) #-5,+6
-            print('detection range: {} - {} ({})'.format(dimension_list[0], dimension_list[-1], horn_dim))
+            print('dimension detection range: {} - {} ({})'.format(dimension_list[0], dimension_list[-1], horn_dim))
 
+        config_list = itertools.product(dimension_list, config_list)
+        config_list = [(d, *betas) for d, betas in config_list]
+        
         optimal_stat = None
         optimal_MF_data = None
         embed_stat_list = []
         
         # create masks
-        tqdm_range = trange(repeat, desc='Bar desc', leave=True)
+        tqdm_range = trange(repeat, desc='dimension detection', leave=True)
         for r in tqdm_range:
             # np.random.seed()
             # set random seed
@@ -896,53 +884,52 @@ class ICQF(TransformerMixin, BaseEstimator):
             if mask_type == 'random':
                 mask_train_list, mask_valid_list = random_CV_mask(MF_data.M, J=nfold)
                     
-            for dim in dimension_list:
-                for W_beta in W_beta_list:
-                    for Q_beta in Q_beta_list:
-                        
-                        self.n_components = dim
-                        self.W_beta = W_beta
-                        self.Q_beta = Q_beta
-                        
-                        if random_fold:
-                            rfold = np.random.randint(nfold)
-                            mask_train = mask_train_list[rfold]
-                            mask_valid = mask_valid_list[rfold]
-                            
-                            embed_stat, MF_data = self.embed_holdout(MF_data, mask_train, mask_valid)
-                            embed_stat_list.append(embed_stat)
+            for config in config_list:
+                
+                (dim, W_beta, Q_beta) = config
+                self.n_components = dim
+                self.W_beta = W_beta
+                self.Q_beta = Q_beta
 
-                            if optimal_stat is not None:
-                                if embed_stat[-1] < optimal_stat[-1]:
-                                    optimal_stat = embed_stat
-                                    optimal_MF_data = MF_data
-                            else:
+                if random_fold:
+                    rfold = np.random.randint(nfold)
+                    mask_train = mask_train_list[rfold]
+                    mask_valid = mask_valid_list[rfold]
+
+                    embed_stat, MF_data = self.embed_holdout(MF_data, mask_train, mask_valid)
+                    embed_stat_list.append(embed_stat)
+
+                    if optimal_stat is not None:
+                        if embed_stat[-1] < optimal_stat[-1]:
+                            optimal_stat = embed_stat
+                            optimal_MF_data = MF_data
+                    else:
+                        optimal_stat = embed_stat
+                        optimal_MF_data = MF_data
+
+                    tqdm_range.set_description(f"repeat-[{r+1:2.0f}]: config-[{dim:2.0f},{W_beta:1.3f},{Q_beta:1.3f}], fold-[{rfold+1:2.0f}], optimal-[{optimal_stat[0]:2.0f}, {optimal_stat[-1]:2.3f}]")
+                    tqdm_range.refresh()
+
+                else:
+                    for fold in range(nfold):
+                        mask_train = mask_train_list[fold]
+                        mask_valid = mask_valid_list[fold]
+
+                        embed_stat, MF_data = self.embed_holdout(MF_data, mask_train, mask_valid)
+                        embed_stat_list.append(embed_stat)
+
+                        if optimal_stat is not None:
+                            if embed_stat[-1] < optimal_stat[-1]:
                                 optimal_stat = embed_stat
                                 optimal_MF_data = MF_data
-                                
-                            tqdm_range.set_description(f"repeat-[{r+1:2.0f}]: config-[{dim:2.0f},{W_beta:1.3f},{Q_beta:1.3f}], fold-[{rfold+1:2.0f}], optimal-[{optimal_stat[0]:2.0f}, {optimal_stat[-1]:2.3f}]")
-                            tqdm_range.refresh()
-                            
                         else:
-                            for fold in range(nfold):
-                                mask_train = mask_train_list[fold]
-                                mask_valid = mask_valid_list[fold]
+                            optimal_stat = embed_stat
+                            optimal_MF_data = MF_data
 
-                                embed_stat, MF_data = self.embed_holdout(MF_data, mask_train, mask_valid)
-                                embed_stat_list.append(embed_stat)
-
-                                if optimal_stat is not None:
-                                    if embed_stat[-1] < optimal_stat[-1]:
-                                        optimal_stat = embed_stat
-                                        optimal_MF_data = MF_data
-                                else:
-                                    optimal_stat = embed_stat
-                                    optimal_MF_data = MF_data
+                        tqdm_range.set_description(f"repeat-[{r+1:2.0f}]:config-[{dim:2.0f},{W_beta:1.3f},{Q_beta:1.3f}],fold-[{fold+1}/{nfold+1}],optimal-[{optimal_stat[0]:2.0f},{optimal_stat[-1]:2.3f}]")
+                    tqdm_range.refresh()
                                     
-                                tqdm_range.set_description(f"repeat-[{r+1:2.0f}]: config-[{dim:2.0f},{W_beta:1.3f},{Q_beta:1.3f}], fold-[{fold+1}/{nfold+1}], optimal-[{optimal_stat[0]:2.0f}, {optimal_stat[-1]:2.3f}]")
-                            tqdm_range.refresh()
-                                    
-        tqdm_range.set_description(f"config-[{dim:2.0f},{W_beta:1.3f},{Q_beta:1.3f}], optimal-[{optimal_stat[0]:2.0f}, {optimal_stat[-1]:2.3f}]")
+        tqdm_range.set_description(f"config-[{dim:2.0f},{W_beta:1.3f},{Q_beta:1.3f}],optimal-[{optimal_stat[0]:2.0f}, {optimal_stat[-1]:2.3f}]")
         tqdm_range.refresh()
                                     
         return optimal_MF_data, optimal_stat, embed_stat_list

@@ -7,11 +7,15 @@ import copy
 
 from scipy.spatial.distance import cosine
 
-def simulation(nrow, ncol, ndict, overlap, density=0.3,
+def simulation(nrow, ncol, ndict, overlap=None, density=0.3,
                Q_upperbd=100, lowerbd=0,
-               noise=True, delta=0.1,
+               noise=False, delta=0.1,
+               missing_ratio = 0.0,
                confound=False,
                visualize=True):
+    
+    if overlap is None:
+        overlap = int(nrow//40)
     
     D = np.zeros((nrow, ndict))
     for k in range(ndict):
@@ -71,35 +75,47 @@ def simulation(nrow, ncol, ndict, overlap, density=0.3,
         M +=noise_matrix
         M[M < 0] = 0
         M[M > np.max(M)] = np.max(M)
-
+        
+    if missing_ratio > 0:
+        nan_mask = np.random.choice((0, 1), size=(nrow, ncol), p=[missing_ratio, (1-missing_ratio)])
+        M[nan_mask] = np.nan
+    else:
+        nan_mask = np.ones_like(M)
+        
     if visualize:
         fig, (ax1, ax2, ax3) = pyplot.subplots(1, 3, figsize=(12, 3))
         
         if noise:
-            sns.heatmap(M, ax=ax1, cmap="Blues", cbar=False)
-            ax1.set_title('M, $\delta$={}, range:[{:.2f}, {:.2f}]'.format(delta, np.min(M), np.max(M)))
+            sns.heatmap(M, ax=ax1, cmap="Blues", mask=1-nan_mask, cbar=False)
+            ax1.set_title('$M, \delta$={}, range:[{:.2f}, {:.2f}]'.format(delta, np.nanmin(M), np.nanmax(M)))
             bottom, top = ax1.get_ylim()
             ax1.set_ylim(bottom + 1.5, top - 0.5)   
         else:
-            sns.heatmap(M_clean, ax=ax1, cmap="Blues", cbar=False)
-            ax1.set_title('M')
+            sns.heatmap(M_clean, ax=ax1, cmap="Blues", mask=1-nan_mask, cbar=False)
+            ax1.set_title('$M, range:[{:.2f}, {:.2f}]'.format(np.nanmin(M), np.nanmax(M)))
             bottom, top = ax1.get_ylim()
             ax1.set_ylim(bottom + 1.5, top - 0.5)
 
         sns.heatmap(true_W, ax=ax2, cmap="Blues", cbar=False)
-        ax2.set_title('W, range:[{:.2f}, {:.2f}]'.format(np.min(true_W), np.max(true_W)))
+        if confound is not None:
+            ax2.set_title('$[W, C]$, range:[{:.2f}, {:.2f}]'.format(np.min(true_W), np.max(true_W)))
+        else:
+            ax2.set_title('$W$, range:[{:.2f}, {:.2f}]'.format(np.min(true_W), np.max(true_W)))
         bottom, top = ax2.get_ylim()
         ax2.set_ylim(bottom + 1.5, top - 0.5)
 
         sns.heatmap(true_Q, ax=ax3, cmap="Blues", cbar=False)
-        ax3.set_title('Q, range:[{:.2f}, {:.2f}]'.format(np.min(true_Q), np.max(true_Q)))
+        if confound is not None:
+            ax3.set_title('$[Q, Q_c]$, range:[{:.2f}, {:.2f}]'.format(np.min(true_Q), np.max(true_Q)))
+        else:
+            ax3.set_title('$Q$, range:[{:.2f}, {:.2f}]'.format(np.min(true_Q), np.max(true_Q)))
         bottom, top = ax3.get_ylim()
         ax3.set_ylim(bottom + 1.5, top - 0.5)
 
         pyplot.tight_layout()
         pyplot.show()
     
-    return true_W, true_Q, confound, M_clean, M
+    return true_W, true_Q, confound, M_clean, M, nan_mask
 
 
 
@@ -143,18 +159,26 @@ def show_synthetic_result(MF_data, true_W, true_Q):
     fig, ((ax1, ax2, ax3), (ax4, ax5, ax6)) = pyplot.subplots(2, 3, figsize=(12, 5))
         
 
-    sns.heatmap(MF_data.M, ax=ax1, cmap="Blues", cbar=False)
-    ax1.set_title('$M$, range:[{:.2f}, {:.2f}]'.format(np.min(MF_data.M), np.max(MF_data.M)))
+    sns.heatmap(MF_data.M, ax=ax1, cmap="Blues", mask=1-MF_data.nan_mask, cbar=False)
+    ax1.set_title('$M$, range:[{:.2f}, {:.2f}]'.format(np.nanmin(MF_data.M), np.nanmax(MF_data.M)))
     bottom, top = ax1.get_ylim()
     ax1.set_ylim(bottom + 1.5, top - 0.5)
 
     sns.heatmap(true_W, ax=ax2, cmap="Blues", cbar=False)
-    ax2.set_title('W, range:[{:.2f}, {:.2f}]'.format(np.min(true_W), np.max(true_W)))
+    # ax2.set_title('W, range:[{:.2f}, {:.2f}]'.format(np.min(true_W), np.max(true_W)))
+    if MF_data.C is not None:
+        ax2.set_title('$[W, C]$, range:[{:.2f}, {:.2f}]'.format(np.min(true_W), np.max(true_W)))
+    else:
+        ax2.set_title('$W$, range:[{:.2f}, {:.2f}]'.format(np.min(true_W), np.max(true_W)))
     bottom, top = ax2.get_ylim()
     ax2.set_ylim(bottom + 1.5, top - 0.5)
 
     sns.heatmap(true_Q, ax=ax3, cmap="Blues", cbar=False)
-    ax3.set_title('Q, range:[{:.2f}, {:.2f}]'.format(np.min(true_Q), np.max(true_Q)))
+    # ax3.set_title('Q, range:[{:.2f}, {:.2f}]'.format(np.min(true_Q), np.max(true_Q)))
+    if MF_data.C is not None:
+        ax3.set_title('$[Q, Q_c]$, range:[{:.2f}, {:.2f}]'.format(np.min(true_Q), np.max(true_Q)))
+    else:
+        ax3.set_title('$Q$, range:[{:.2f}, {:.2f}]'.format(np.min(true_Q), np.max(true_Q)))
     bottom, top = ax3.get_ylim()
     ax3.set_ylim(bottom + 1.5, top - 0.5)
 
@@ -164,7 +188,7 @@ def show_synthetic_result(MF_data, true_W, true_Q):
     bottom, top = ax4.get_ylim()
     ax4.set_ylim(bottom + 1.5, top - 0.5)
 
-    if MF_data.confound is None:
+    if MF_data.C is None:
         sns.heatmap(match_W, ax=ax5, cmap="Blues", cbar=False)
         ax5.set_title('W, range:[{:.2f}, {:.2f}]'.format(np.min(MF_data.W), np.max(MF_data.W)))
         bottom, top = ax5.get_ylim()
