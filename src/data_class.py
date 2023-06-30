@@ -70,15 +70,17 @@ class matrix_class:
         # check if M contains nan elements
         num_nan = np.sum(np.isnan(self.M))
         if num_nan > 0:
-            warnings.warn('Input M[matrix] contains {} NaN elements'.format(num_nan))
+            # warnings.warn('Input M[matrix] contains {} NaN elements'.format(num_nan))
+            # 
+            self.vprint('[[[Warning]]] Input M[matrix] contains {} NaN elements'.format(num_nan))
             self.vprint('Map NaN entries to zero in M[matrix]')
             nan_mask = 1 - np.isnan(self.M)
             if self.nan_mask is None:
                 self.M[nan_mask] = 0
                 self.nan_mask = nan_mask
             else:
-                assert self.nan_mask == nan_mask
-                self.M[self.nan_mask] = 0
+                assert (self.nan_mask == nan_mask).all()
+                self.M[~self.nan_mask.astype(dtype=bool)] = 0
         else:
             if self.nan_mask is None:
                 self.nan_mask = np.ones_like(self.M)
@@ -87,7 +89,7 @@ class matrix_class:
         M_max = np.max(self.M)
         M_min = np.min(self.M)
         if M_min < 0:
-            warnings.warn('Input M[matrix] contains negative entries')
+            self.vprint('[[[Warning]]] Input M[matrix] contains negative entries')
             self.vprint('Project negative entries onto 0')
             self.M[self.M < 0] = 0
         if M_max > 1:
@@ -102,7 +104,8 @@ class matrix_class:
         if self.confound is not None:
             num_nan = np.sum(np.isnan(self.confound))
             if num_nan > 0:
-                warnings.warn('Input confound[matrix] contains {} NaN elements'.format(num_nan))
+                # warnings.warn('Input confound[matrix] contains {} NaN elements'.format(num_nan))
+                self.vprint('[[[Warning]]] Input confound[matrix] contains {} NaN elements'.format(num_nan))
                 self.vprint('Impute NaN entries in confound')
                 imp_mean = SimpleImputer(missing_values=np.nan, strategy='mean')
                 self.confound = imp_mean.fit_transform(self.confound)

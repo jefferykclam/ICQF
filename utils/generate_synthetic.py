@@ -77,8 +77,9 @@ def simulation(nrow, ncol, ndict, overlap=None, density=0.3,
         M[M > np.max(M)] = np.max(M)
         
     if missing_ratio > 0:
-        nan_mask = np.random.choice((0, 1), size=(nrow, ncol), p=[missing_ratio, (1-missing_ratio)])
-        M[nan_mask] = np.nan
+        nan_mask = np.random.choice((0,1), size=(nrow,ncol), p=[missing_ratio,(1-missing_ratio)]).astype(dtype=bool)
+        M[~nan_mask] = np.nan
+        nan_mask = nan_mask.astype(dtype=float)
     else:
         nan_mask = np.ones_like(M)
         

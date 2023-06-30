@@ -1,6 +1,11 @@
+#!python
+#cython: language_level=3
+
 # Author: Mathieu Blondel, Tom Dupre la Tour
 # License: BSD 3 clause
 
+
+import cython
 from cython cimport floating
 from libc.math cimport fabs
 
@@ -15,27 +20,28 @@ def _update_cdnmf_fast(floating[:, ::1] W, floating[:, :] HHt,
         Py_ssize_t i, r, s, t
 
     with nogil:
-        for s in range(n_components):
-            t = permutation[s]
+        with cython.boundscheck(False):
+            for s in range(n_components):
+                t = permutation[s]
 
-            for i in range(n_samples):
-                # gradient = GW[t, i] where GW = np.dot(W, HHt) - XHt
-                grad = -XHt[i, t]
+                for i in range(n_samples):
+                    # gradient = GW[t, i] where GW = np.dot(W, HHt) - XHt
+                    grad = -XHt[i, t]
 
-                for r in range(n_components):
-                    grad += HHt[t, r] * W[i, r]
+                    for r in range(n_components):
+                        grad += HHt[t, r] * W[i, r]
 
-                # projected gradient
-                pg = min(0., grad) if W[i, t] == 0 else grad
-                violation += fabs(pg)
+                    # projected gradient
+                    pg = min(0., grad) if W[i, t] == 0 else grad
+                    violation += fabs(pg)
 
-                # Hessian
-                hess = HHt[t, t]
+                    # Hessian
+                    hess = HHt[t, t]
 
-                if hess != 0:
-                    if upperbd > 0:
-                        W[i, t] = min(max(W[i, t] - grad / hess, 0.), upperbd)
-                    else:
-                        W[i, t] = max(W[i, t] - grad / hess, 0.)
-                
+                    if hess != 0:
+                        if upperbd > 0:
+                            W[i, t] = min(max(W[i, t] - grad / hess, 0.), upperbd)
+                        else:
+                            W[i, t] = max(W[i, t] - grad / hess, 0.)
+
     return violation
