@@ -15,7 +15,7 @@ from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.utils.extmath import randomized_svd, safe_sparse_dot
 from sklearn.utils import check_random_state, check_array
 
-from sklearn.model_selection import KFold
+from sklearn.model_selection import KFold, StratifiedKFold
 
 from cvxopt import matrix, spmatrix, solvers, sparse, spdiag
 import quadprog
@@ -27,7 +27,7 @@ from ._cdnmf_fast import _update_cdnmf_fast
 from .factor_analysis import factor_analysis, parallel_analysis_serial
 from .data_class import matrix_class
 
-
+from kneed import KneeLocator
     
 # we adopted the NNDSVD initialization as in sklearn NMF
 def NNDSVD(M, n_components,
@@ -317,19 +317,24 @@ def block_CV_mask(P, Krow, Kcol, J=10):
         mask_valid_list.append(mask_valid)
     return mask_train_list, mask_valid_list
     
-def random_CV_mask(P, J=10):
-    idx = np.arange(P.shape[0]*P.shape[1])
-    n = idx.shape[0]
-    nc = int(np.ceil(n/J))
-    np.random.shuffle(idx)
+def random_CV_mask(M, J=10):
+    Mp = M>0
+    Mz = M==0
+    
+    idx = np.arange(M.shape[0]*M.shape[1])
+    y = Mp.reshape(-1)
+    
     mask_train_list = []
     mask_valid_list = []
-    for j in range(J):
-        mask_train = np.ones_like(P).reshape(-1)
-        mask_train[idx[j*nc:(j+1)*nc]] = 0
-        mask_valid = 1 - mask_train
-        mask_train_list.append(mask_train.reshape(P.shape[0], P.shape[1]))
-        mask_valid_list.append(mask_valid.reshape(P.shape[0], P.shape[1]))
+    skf = StratifiedKFold(n_splits=J, shuffle=True)
+    for i, (train_index, test_index) in enumerate(skf.split(idx, y)):
+        mask_train = np.zeros_like(y)
+        mask_valid = np.zeros_like(y)
+        mask_train[train_index] = 1
+        mask_valid[test_index] = 1
+        mask_train_list.append(mask_train.reshape(M.shape[0], M.shape[1]))
+        mask_valid_list.append(mask_valid.reshape(M.shape[0], M.shape[1]))
+        
     return mask_train_list, mask_valid_list
 
 
@@ -819,6 +824,7 @@ class ICQF(TransformerMixin, BaseEstimator):
                          repeat=5,
                          nfold=5,
                          random_fold=True,
+                         detection='kneed',
                          nrow=10,
                          ncol=10):
 
@@ -912,7 +918,6 @@ class ICQF(TransformerMixin, BaseEstimator):
                     embed_stat_pd.loc[len(embed_stat_pd)] = [r, fold] + embed_stat
                     
                     avg_stat = embed_stat_pd.groupby(['dimension', 'W_beta', 'Q_beta'])['valid_error'].mean().reset_index()
-                    optimal_config = avg_stat.loc[avg_stat['valid_error'].idxmin()].values
 
                     # if optimal_stat is not None:
                     #     if embed_stat[-1] < optimal_stat[-1]:
@@ -928,12 +933,35 @@ class ICQF(TransformerMixin, BaseEstimator):
                     if random_fold:
                         message += f"fold-[{fold+1:2.0f}], "
                     else:
-                        message += f"fold-[{fold+1:2.0f}/{nfold:2.0f}], "
+                        message += f"fold-[{fold+1:2.0f}/{nfold:2.0f}]"
                     # message += f"optimal-[{optimal_stat[0]:2.0f}, {optimal_stat[-1]:2.3f}]"
-                    message += f"optimal-[{optimal_config[0]:2.0f}, {optimal_config[-1]:2.3f}]"
+                    # message += f"optimal-[{optimal_config[0]:2.0f}, {optimal_config[-1]:2.3f}]"
                         
                     tqdm_range.set_description(message)
                     tqdm_range.refresh()
+                    
+            if detection == 'kneed':
+                optimal_config = avg_stat.loc[avg_stat['valid_error'].idxmin()].values
+                optimal_W_beta = optimal_config[1]
+                optimal_Q_beta = optimal_config[2]
+                optimal_stat = embed_stat_pd.loc[(embed_stat_pd['W_beta']==optimal_W_beta) & (embed_stat_pd['Q_beta']==optimal_Q_beta)]
+                optimal_valid_error = optimal_stat.groupby(['dimension'])['valid_error'].mean().reset_index()
+                search_range = optimal_valid_error['dimension'].values
+                reconst_err = optimal_valid_error['valid_error'].values
+                try: 
+                    kn = KneeLocator(search_range, reconst_err, curve='convex', direction='decreasing')
+                    optimal_config[0] = int(kn.knee)
+                except:
+                    self.vprint('optimal kneed point cannot be detected, report lowest point instead.')
+                    
+            elif detection == 'lowest':
+                optimal_config = avg_stat.loc[avg_stat['valid_error'].idxmin()].values
+                
+            message = f"repeat-[{r+1:2.0f}]: "
+            message += f"optimal config-[{optimal_config[0]:2.0f},{optimal_config[1]:1.3f},{optimal_config[2]:1.3f}]"
+
+            tqdm_range.set_description(message)
+            tqdm_range.refresh()
         
         self.n_components = int(optimal_config[0])
         self.W_beta = optimal_config[1]
