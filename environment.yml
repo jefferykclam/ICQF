@@ -9,8 +9,7 @@ dependencies:
   - ipykernel
   - ipython
   - joblib
-  - jupyter_client
-  - jupyter_core
+  - jupyterlab
   - kneed
   - matplotlib
   - numpy

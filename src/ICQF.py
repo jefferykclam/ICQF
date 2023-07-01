@@ -9,9 +9,13 @@ pyximport.install()
 import numpy as np
 import itertools
 
+import pandas as pd
+
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.utils.extmath import randomized_svd, safe_sparse_dot
 from sklearn.utils import check_random_state, check_array
+
+from sklearn.model_selection import KFold
 
 from cvxopt import matrix, spmatrix, solvers, sparse, spdiag
 import quadprog
@@ -625,9 +629,9 @@ class ICQF(TransformerMixin, BaseEstimator):
         self.MF_init = copy.deepcopy(MF_data)
         toc = time.perf_counter()
         # print(f"Initialization time: {toc-tic:0.4f}s")
-        self.MF, self.loss_history = self._fit_transform(MF_data, update_Q=True)
+        self.MF_data_, self.loss_history_ = self._fit_transform(MF_data, update_Q=True)
         
-        return self.MF, self.loss_history 
+        return self.MF_data_, self.loss_history_
 
     def fit(self, matrix_class):
         _ = self.fit_transform(matrix_class)
@@ -636,7 +640,7 @@ class ICQF(TransformerMixin, BaseEstimator):
         # optimize W with given Q, C, M (and mask)
         
         # make a copy of the trained model (to get Q, C)
-        MF_init = copy.deepcopy(self.MF)
+        MF_init = copy.deepcopy(self.MF_data_)
         
         MF_init.M = matrix_class.M
         MF_init.M_raw = matrix_class.M_raw
@@ -667,7 +671,7 @@ class ICQF(TransformerMixin, BaseEstimator):
         
         # add confounds corresponding new data matrix, if applicable
         if matrix_class.confound is not None:
-            assert self.MF.confound is not None
+            assert self.MF_data_.confound is not None
             C = np.hstack((matrix_class.confound, 1.0-matrix_class.confound))
             C = np.hstack((C, np.ones((C.shape[0], 1))))
             
@@ -676,7 +680,7 @@ class ICQF(TransformerMixin, BaseEstimator):
             if self.Q_upperbd[0] == True:
                 MF_init.Qc[MF_init.Qc > self.Q_upperbd[1]] = self.Q_upperbd[1]
         else:
-            assert self.MF.confound is None
+            assert self.MF_data_.confound is None
             MF_init.C = None
             MF_init.Qc = None
             
@@ -703,6 +707,8 @@ class ICQF(TransformerMixin, BaseEstimator):
         MF_data.W = check_array(MF_data.W, order='C')
         MF_data.Q = check_array(MF_data.Q, order='C')
         MF_data.M = check_array(MF_data.M, order='C')
+        
+        self.n_components_ = self.n_components
         
         # initial distance value
         loss_history = []
@@ -782,10 +788,9 @@ class ICQF(TransformerMixin, BaseEstimator):
         return MF_data, loss_history
     
     def embed_holdout(self, MF_data, mask_train, mask_valid):
-        start = time.time()
-        
+
         # store data nan_mask
-        nan_mask = copy.deepcopy(MF_data.nan_mask)
+        _nan_mask = copy.deepcopy(MF_data.nan_mask)
         
         # multiply nan_mask with training mask
         MF_data.nan_mask *= mask_train
@@ -794,15 +799,14 @@ class ICQF(TransformerMixin, BaseEstimator):
         MF_data, loss_history = self.fit_transform(MF_data)
         
         # recovery nan_mask
-        MF_data.nan_mask = nan_mask
+        MF_data.nan_mask = _nan_mask
         
         train_error = self._missmatch_loss(MF_data, mask_train)
         valid_error = self._missmatch_loss(MF_data, mask_valid)
 
         embedding_stat = [self.n_components, self.W_beta, self.Q_beta, train_error, valid_error]
         
-        end = time.time()
-        return embedding_stat, MF_data
+        return embedding_stat, MF_data, loss_history
     
     
     def detect_dimension(self,
@@ -813,7 +817,7 @@ class ICQF(TransformerMixin, BaseEstimator):
                          separate_beta=False,
                          mask_type='random',
                          repeat=5,
-                         nfold=10,
+                         nfold=5,
                          random_fold=True,
                          nrow=10,
                          ncol=10):
@@ -821,18 +825,18 @@ class ICQF(TransformerMixin, BaseEstimator):
         self.verbose = False
         
         if (W_beta_list is None) and (Q_beta_list is None):
-            W_beta_list = [0.0, 0.01, 0.1, 0.2, 0.5]
-            Q_beta_list = [0.0, 0.01, 0.1, 0.2, 0.5]
+            W_beta_list = [0.001, 0.01, 0.1, 0.2, 0.5]
+            Q_beta_list = [0.001, 0.01, 0.1, 0.2, 0.5]
         elif (W_beta_list is not None) and (Q_beta_list is None):
             if separate_beta:
                 assert isinstance(W_beta_list, list)
-                Q_beta_list = [0.0, 0.01, 0.1, 0.2, 0.5]
+                Q_beta_list = [0.001, 0.01, 0.1, 0.2, 0.5]
             else:
                 Q_beta_list = W_beta_list
         elif (W_beta_list is None) and (Q_beta_list is not None):
             if separate_beta:
                 assert isinstance(Q_beta_list, list)
-                W_beta_list = [0.0, 0.01, 0.1, 0.2, 0.5]
+                W_beta_list = [0.001, 0.01, 0.1, 0.2, 0.5]
             else:
                 W_beta_list = Q_beta_list
         else:
@@ -871,7 +875,8 @@ class ICQF(TransformerMixin, BaseEstimator):
         
         optimal_stat = None
         optimal_MF_data = None
-        embed_stat_list = []
+        optimal_loss_history = None
+        embed_stat_pd = pd.DataFrame(columns=['repeat', 'fold', 'dimension', 'W_beta', 'Q_beta', 'train_error', 'valid_error'])
         
         # create masks
         tqdm_range = trange(repeat, desc='dimension detection', leave=True)
@@ -883,6 +888,7 @@ class ICQF(TransformerMixin, BaseEstimator):
                 mask_train_list, mask_valid_list = block_CV_mask(MF_data.M, Krow=nrow, Kcol=ncol, J=nfold)
             if mask_type == 'random':
                 mask_train_list, mask_valid_list = random_CV_mask(MF_data.M, J=nfold)
+
                     
             for config in config_list:
                 
@@ -890,46 +896,53 @@ class ICQF(TransformerMixin, BaseEstimator):
                 self.n_components = dim
                 self.W_beta = W_beta
                 self.Q_beta = Q_beta
-
+                
                 if random_fold:
                     rfold = np.random.randint(nfold)
-                    mask_train = mask_train_list[rfold]
-                    mask_valid = mask_valid_list[rfold]
+                    
+                for fold in range(nfold):
+                    if random_fold:
+                        if fold != rfold:
+                            continue
+                    
+                    mask_train = mask_train_list[fold]
+                    mask_valid = mask_valid_list[fold]
 
-                    embed_stat, MF_data = self.embed_holdout(MF_data, mask_train, mask_valid)
-                    embed_stat_list.append(embed_stat)
+                    embed_stat, MF_data, loss_history = self.embed_holdout(MF_data, mask_train, mask_valid)
+                    embed_stat_pd.loc[len(embed_stat_pd)] = [r, fold] + embed_stat
+                    
+                    avg_stat = embed_stat_pd.groupby(['dimension', 'W_beta', 'Q_beta'])['valid_error'].mean().reset_index()
+                    optimal_config = avg_stat.loc[avg_stat['valid_error'].idxmin()].values
 
-                    if optimal_stat is not None:
-                        if embed_stat[-1] < optimal_stat[-1]:
-                            optimal_stat = embed_stat
-                            optimal_MF_data = MF_data
+                    # if optimal_stat is not None:
+                    #     if embed_stat[-1] < optimal_stat[-1]:
+                    #         optimal_stat = embed_stat
+                    #         optimal_MF_data = MF_data
+                    #         optimal_loss_history = loss_history
+                    # else:
+                    #     optimal_stat = embed_stat
+                    #     optimal_MF_data = MF_data
+                    #     optimal_loss_history = loss_history
+                    
+                    message = f"repeat-[{r+1:2.0f}]: config-[{dim:2.0f},{W_beta:1.3f},{Q_beta:1.3f}], "
+                    if random_fold:
+                        message += f"fold-[{fold+1:2.0f}], "
                     else:
-                        optimal_stat = embed_stat
-                        optimal_MF_data = MF_data
-
-                    tqdm_range.set_description(f"repeat-[{r+1:2.0f}]: config-[{dim:2.0f},{W_beta:1.3f},{Q_beta:1.3f}], fold-[{rfold+1:2.0f}], optimal-[{optimal_stat[0]:2.0f}, {optimal_stat[-1]:2.3f}]")
+                        message += f"fold-[{fold+1:2.0f}/{nfold:2.0f}], "
+                    # message += f"optimal-[{optimal_stat[0]:2.0f}, {optimal_stat[-1]:2.3f}]"
+                    message += f"optimal-[{optimal_config[0]:2.0f}, {optimal_config[-1]:2.3f}]"
+                        
+                    tqdm_range.set_description(message)
                     tqdm_range.refresh()
-
-                else:
-                    for fold in range(nfold):
-                        mask_train = mask_train_list[fold]
-                        mask_valid = mask_valid_list[fold]
-
-                        embed_stat, MF_data = self.embed_holdout(MF_data, mask_train, mask_valid)
-                        embed_stat_list.append(embed_stat)
-
-                        if optimal_stat is not None:
-                            if embed_stat[-1] < optimal_stat[-1]:
-                                optimal_stat = embed_stat
-                                optimal_MF_data = MF_data
-                        else:
-                            optimal_stat = embed_stat
-                            optimal_MF_data = MF_data
-
-                        tqdm_range.set_description(f"repeat-[{r+1:2.0f}]:config-[{dim:2.0f},{W_beta:1.3f},{Q_beta:1.3f}],fold-[{fold+1}/{nfold+1}],optimal-[{optimal_stat[0]:2.0f},{optimal_stat[-1]:2.3f}]")
-                    tqdm_range.refresh()
+        
+        self.n_components = int(optimal_config[0])
+        self.W_beta = optimal_config[1]
+        self.Q_beta = optimal_config[2]
+        
+        optimal_MF_data, optimal_loss_history = self.fit_transform(MF_data)
+        
+        # self.n_components_ = optimal_stat[0]
+        # self.MF_data_ = optimal_MF_data
+        # self.loss_history_ = optimal_loss_history
                                     
-        tqdm_range.set_description(f"config-[{dim:2.0f},{W_beta:1.3f},{Q_beta:1.3f}],optimal-[{optimal_stat[0]:2.0f}, {optimal_stat[-1]:2.3f}]")
-        tqdm_range.refresh()
-                                    
-        return optimal_MF_data, optimal_stat, embed_stat_list
+        return optimal_MF_data, optimal_stat, embed_stat_pd
