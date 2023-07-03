@@ -184,7 +184,7 @@ print(np.around(confound_raw,3))
 
 
 
-Similarly, we construct the correspond `matrix_class` object storing the data.
+Similarly, we construct the corresponding `matrix_class` object storing the data.
 
 ```python
 MF_data = matrix_class(M=M, confound_raw=confound_raw)
@@ -221,25 +221,30 @@ show_synthetic_result(MF_data, true_W, true_Q)
 
 #### Synthetic example with missing entries
 
-
+In this example, we generate another example with missing entries. We can set the missing ratio via `missing_ratio`:
 
 ```python
 true_W, true_Q, confound_raw, M_clean, M, nan_mask = simulation(2000, 100, 10, 50, 
                                                                 density=0.3,
-                                                                noise=True, delta=0.1, 
+                                                                noise=True,
+                                                                delta=0.1, 
                                                                 confound=True,
                                                                 missing_ratio=0.05,
                                                                 visualize=True)
 ```
 
-
+We include `nan_mask` to the `matrix_class`:
 
 ```
 MF_data = matrix_class(M=M, confound_raw=confound_raw, nan_mask=nan_mask)
 MF_data.check_input()
 ```
 
+and fit and transform as usual:
 
+```
+MF_data, loss = clf.fit_transform(MF_data)
+```
 
 
 
