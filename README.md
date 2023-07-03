@@ -90,7 +90,7 @@ MF_data = matrix_class(M_raw=M_raw, confound_raw=confound_raw, nan_mask=nan_mask
 #### Parameters
 
 - `n_components` : **int, default=2** latent dimension. To estimate, see `detect_dim` in **Methods** section.
-- `method` : **{'admm', 'cd', 'hybrid'}, default='admm'**. Method used to optimize `W` and `Q` subproblems.
+- `method` : **{'admm', 'cd', 'hybrid'}, default='cd'**. Method used to optimize `W` and `Q` subproblems.
 - `W_beta` : **float, default=0.0**. Strength of regularizer on `W`. Set it to zero to have no regularization.
 - `Q_beta` : **float, default=0.0**. Strength of regularizer on `Q`. Set it to zero to have no regularization
 - `regularizer` : **{1, 2}, default=1**. Type of regularizer. For L-1 (sparsity) choose `1`. For L-2 (smoothness), choose `2`.
@@ -119,12 +119,14 @@ MF_data = matrix_class(M_raw=M_raw, confound_raw=confound_raw, nan_mask=nan_mask
   - `dimension_list` : **list[int], default=None**. List of integers to test for optimal latent dimension. If `None`, an automatic estimation of dimension $d$ using parallel analysis is performed and test the optimal dimension within the range $[ \max(d-10, 2), d+10]$.
   - `W_beta_list` : **list[float], default=None**. List of floats to test for optimal regularization strength. If `None`, it tests the optimal regularization for $W$ within $[0.0, 0.01, 0.1, 0.2, 0.5]$.
   - `Q_beta_list` : **list[float], default=None**. List of floats to test for optimal regularization strength. If `None`, it tests the optimal regularization for $Q$ within $[0.0, 0.01, 0.1, 0.2, 0.5]$.
-  - `mask_type` : **{'random', 'block'}, default='random'**. Ways to choose the sub-block matrix for cross validation. If `random`, `1/nfold` of entries will be choose random within the whole matrix as the cross-validation held-out set. If `block`, the data matrix will first be subdivided into `nrow` $\times$ `ncol` sub-blocks, then $\lfloor$ `nrow` $\times$ `ncol` / `nfold`  $\rfloor$ sub-blocks will be chosen as the cross-validation held-out set. [Future - mask type should also support group stratified splitting.] 
-  - `repeat` : **int, default=5**. Number of cross-validation for each configuration.
-  - `nfold` : **int, default=10**. Number of folds in cross-validation.
+  - `mask_type` : **{'random', 'block'}, default='random'**. Ways to choose the sub-block matrix for cross validation. If `random`, `1/nfold` of entries will be choose random within the whole matrix as the cross-validation held-out set. If `block`, the data matrix will first be subdivided into `nrow` $\times$ `ncol` sub-blocks, then $\lfloor$ `nrow` $\times$ `ncol` / `nfold`  $\rfloor$ sub-blocks will be chosen as the cross-validation held-out set.
+  - `repeat` : **int, default=1**. Number of cross-validation for each configuration.
+  - `nfold` : **int, default=5**. Number of folds in cross-validation.
   - `random_fold` : **boolean, default=True**. If `True`, only one random fold will be selected in each cross validation. The aim is to massively reduce the computation time. The optimal configuration tested under this setting serves as a rough estimation only. Used in care. If `False`, validation errors for each fold will be computed, yet the computation cost will be multiplied by `nfold`.
+  - `detection` : **{'kneed', 'lowest'}, default='kneed'**. Way to detect the optimal dimension. `'kneed'` uses the kneed algorithm to detect the changing point, via `'lowest'` simply look for the configuration achieving lowest, averaged cross-validation error. `'kneed'` is recommended.
   - `nrow` : **int, default=10**. Used for `mask_type='block'`. The data matrix will be divided into `nrow` blocks (first dimension).
   - `ncol` : **int, default=10**. Used for `mask_type='block'`. The data matrix will be divided into `ncol` blocks (second dimension).
+  - `show_profile` : **boolean, default=True**. If `True`, a plot showing the trends of cross-validation error in different configurations will be generated.
 
 
 
@@ -245,6 +247,28 @@ and fit and transform as usual:
 ```
 MF_data, loss = clf.fit_transform(MF_data)
 ```
+
+
+
+#### Configuration detection
+
+Very often the latent dimension is not know a-priori, not to mention the strength of regularizers. For users who wish to explore the dataset automatically, the function `detect_dimension` can be utilized to estimate the optimal, data-driven configuration via block cross-validation.
+
+We first generate a simple example
+
+```python
+true_W, true_Q, _, M_clean, M, _ = simulation(200, 100, 10)
+MF_data = matrix_class(M=M)
+MF_data.check_input()
+```
+
+We then use the `detect_dimension` function
+
+```python
+optimal_MF_data, optimal_stat, embed_stat_list = clf.detect_dimension(MF_data,repeat=1)
+```
+
+
 
 
 
