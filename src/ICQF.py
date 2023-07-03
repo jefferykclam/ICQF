@@ -28,6 +28,9 @@ from .factor_analysis import factor_analysis, parallel_analysis_serial
 from .data_class import matrix_class
 
 from kneed import KneeLocator
+
+from matplotlib import pyplot
+import seaborn as sns
     
 # we adopted the NNDSVD initialization as in sklearn NMF
 def NNDSVD(M, n_components,
@@ -826,7 +829,8 @@ class ICQF(TransformerMixin, BaseEstimator):
                          random_fold=True,
                          detection='kneed',
                          nrow=10,
-                         ncol=10):
+                         ncol=10,
+                         show_profile=True):
 
         self.verbose = False
         
@@ -969,8 +973,42 @@ class ICQF(TransformerMixin, BaseEstimator):
         
         optimal_MF_data, optimal_loss_history = self.fit_transform(MF_data)
         
-        # self.n_components_ = optimal_stat[0]
-        # self.MF_data_ = optimal_MF_data
-        # self.loss_history_ = optimal_loss_history
+        self.n_components_ = int(optimal_config[0])
+        self.MF_data_ = optimal_MF_data
+        self.loss_history_ = optimal_loss_history
+        
+        self.detection_profile = embed_stat_pd
+        
+        if show_profile:
+            
+            cmap = sns.color_palette("tab10")
+            fig, ax = pyplot.subplots(figsize=(6, 6))
+            for idx, config in enumerate(config_list):
+                (dim, W_beta, Q_beta) = config
+                config_err = embed_stat_pd.loc[(embed_stat_pd['W_beta']==W_beta) & (embed_stat_pd['Q_beta'] == Q_beta)]
+                mean_err = config_err.groupby(['dimension'])['valid_error'].mean().reset_index()
+                search_range = mean_err['dimension'].values
+                reconst_err = mean_err['valid_error'].values
+                if config == optimal_config:
+                    ax.plot(search_range, reconst_err, c=cmap[np.mod(idx,10)],
+                            alpha=1, label=f"({W_beta:1.3f},{Q_beta:1.3f})")
+                    sns.lineplot(data=config_err, x="dimension", y="valid_error", alpha=0.1, ax=ax, 
+                             color=cmap[np.mod(idx,10)], linestyle='', errorbar=('ci',100))
+                    # try: 
+                    xmin, xmax = ax.get_xlim()
+                    ymin, ymax = ax.get_ylim()
+                    kn = KneeLocator(search_range, reconst_err, curve='convex', direction='decreasing')
+                    ax.vlines(int(kn.knee), ymin, ymax, linestyle='--', c=cmap[np.mod(idx,10)])
+                    ax.hlines(reconst_err[np.where(search_range==kn.knee)[0]], xmin, xmax, linestyle='--', c=cmap[np.mod(idx,10)])
+                    ax.scatter(int(kn.knee), reconst_err[np.where(search_range==kn.knee)[0]], marker='o')
+                    # except:
+                    #     pass
+                      
+                else:
+                    ax.plot(search_range, reconst_err, c=cmap[np.mod(idx,10)],
+                            alpha=0.1)
+                
+            pyplot.show()
+            
                                     
         return optimal_MF_data, optimal_stat, embed_stat_pd
