@@ -5,7 +5,11 @@ closed beta version for ICQF package
 
 ##### Installation
 
+The required packages are recored in `environment.yml` file. Run the following command line in terminal to setup a new conda environment `ICQF`:
 
+```
+mamba env create -f environment.yml
+```
 
 
 
@@ -14,14 +18,22 @@ closed beta version for ICQF package
 We first generate an synthetic example using `simulation` function from `util.generate_synthetic`:
 
 ```python
-true_W, true_Q, _, M_clean, M, _ = simulation(2000, 100, 10)
+true_W, true_Q, _, M_clean, M, _ = simulation(200, 100, 10)
 ```
 
-The generated matrix has dimension $2000 \times 1000$ and the intrinsic latent diemnsion is 10.
+The generated matrix has dimension $200 \times 100$ and the intrinsic latent diemnsion is 10.
 
-Given the data matrix `M`, we first construct the data class
+Given the data matrix `M`, we first construct the data class,
 
-```MF_data = matrix_class(M=M)``` 
+```python
+MF_data = matrix_class(M=M)
+```
+
+check inputs,
+
+```python
+MF_data.check_input()
+```
 
 and initialize the ICQF model:
 
@@ -95,8 +107,8 @@ MF_data = matrix_class(M_raw=M_raw, confound_raw=confound_raw, nan_mask=nan_mask
 
 #### Attributes
 
-- `n_components_` : **int**. Latent dimension. If it was given, it is the same as the n`_components`. otherwise, it will be the dimension detected using `detect_dim` method.
-- `loss_history_` : **list**. Trend of the objective loss during the iteration.
+- `n_components_` : **int**. Latent dimension. If the latent dimensino was initially given, it will be the same as the `n_components`. otherwise, it will be the dimension detected using `detect_dimension` method.
+- `loss_history_` : **list**. Trend of the objective loss during model training.
 
 #### Methods
 
@@ -216,7 +228,7 @@ true_W, true_Q, confound_raw, M_clean, M, nan_mask = simulation(2000, 100, 10, 5
                                                                 density=0.3,
                                                                 noise=True, delta=0.1, 
                                                                 confound=True,
-                                                                missing_ratio=0.2,
+                                                                missing_ratio=0.05,
                                                                 visualize=True)
 ```
 
