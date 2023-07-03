@@ -268,9 +268,11 @@ We then use the `detect_dimension` function
 optimal_MF_data, optimal_stat, embed_stat_list = clf.detect_dimension(MF_data,repeat=1)
 ```
 
+and obtain the full profile `embed_stat_list`
 
+<img src="README.assets/image-20230703095846009.png" alt="image-20230703095846009" style="zoom:50%;" />
 
-
+Here the optimal configuration detected is dimension=10, $\beta_W = 0.001$, $\beta_Q = 0.001$.
 
 #### Synthetic CBCL questionnaire example
 
