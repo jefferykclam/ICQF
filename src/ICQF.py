@@ -824,7 +824,7 @@ class ICQF(TransformerMixin, BaseEstimator):
                          Q_beta_list=None,
                          separate_beta=False,
                          mask_type='random',
-                         repeat=5,
+                         repeat=1,
                          nfold=5,
                          random_fold=True,
                          detection='kneed',
