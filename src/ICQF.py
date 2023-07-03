@@ -989,7 +989,7 @@ class ICQF(TransformerMixin, BaseEstimator):
                 mean_err = config_err.groupby(['dimension'])['valid_error'].mean().reset_index()
                 search_range = mean_err['dimension'].values
                 reconst_err = mean_err['valid_error'].values
-                if config == optimal_config:
+                if (config == optimal_config[:3]).all():
                     ax.plot(search_range, reconst_err, c=cmap[np.mod(idx,10)],
                             alpha=1, label=f"({W_beta:1.3f},{Q_beta:1.3f})")
                     sns.lineplot(data=config_err, x="dimension", y="valid_error", alpha=0.1, ax=ax, 
@@ -998,8 +998,8 @@ class ICQF(TransformerMixin, BaseEstimator):
                     xmin, xmax = ax.get_xlim()
                     ymin, ymax = ax.get_ylim()
                     kn = KneeLocator(search_range, reconst_err, curve='convex', direction='decreasing')
-                    ax.vlines(int(kn.knee), ymin, ymax, linestyle='--', c=cmap[np.mod(idx,10)])
-                    ax.hlines(reconst_err[np.where(search_range==kn.knee)[0]], xmin, xmax, linestyle='--', c=cmap[np.mod(idx,10)])
+                    ax.vlines(int(kn.knee), ymin, ymax, linestyle='--', colors=cmap[np.mod(idx,10)])
+                    ax.hlines(reconst_err[np.where(search_range==kn.knee)[0]], xmin, xmax, linestyle='--', colors=cmap[np.mod(idx,10)])
                     ax.scatter(int(kn.knee), reconst_err[np.where(search_range==kn.knee)[0]], marker='o')
                     # except:
                     #     pass
@@ -1007,6 +1007,8 @@ class ICQF(TransformerMixin, BaseEstimator):
                 else:
                     ax.plot(search_range, reconst_err, c=cmap[np.mod(idx,10)],
                             alpha=0.1)
+                    sns.lineplot(data=config_err, x="dimension", y="valid_error", alpha=0.1, ax=ax, 
+                             color='grey', linestyle='', errorbar=('ci',100))
                 
             pyplot.show()
             
