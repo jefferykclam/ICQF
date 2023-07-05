@@ -11,6 +11,12 @@ The required packages are recored in `environment.yml` file. Run the following c
 mamba env create -f environment.yml
 ```
 
+One may use `conda` instead to create the `ICQF` environment
+
+```
+conda env create -f environment.yml
+```
+
 
 
 ### Quick Example
@@ -21,31 +27,47 @@ We first generate an synthetic example using `simulation` function from `util.ge
 true_W, true_Q, _, M_clean, M, _ = simulation(200, 100, 10)
 ```
 
-The generated matrix has dimension $200 \times 100$ and the intrinsic latent diemnsion is 10.
+<img src="README.assets/image-20230703130127809.png" alt="image-20230703130127809" style="zoom:50%;" />
 
-Given the data matrix `M`, we first construct the data class,
+The generated matrix has dimension $200 \times 100$ ($200$ participants answering $100$ questions) and the intrinsic latent diemnsion is $10$. The matrix $W$ and $Q$ are the latent factors and factor loadings of the synthetic questionnaire $M$.
+
+Given the data matrix `M`, we first construct a data class object `matrix_class` to store data matrix $M$
 
 ```python
 MF_data = matrix_class(M=M)
 ```
 
-check inputs,
+We then check the input via
 
 ```python
 MF_data.check_input()
 ```
 
-and initialize the ICQF model:
+which checks the following
+
+- existence of NaN entries. If `True`, create `nan_mask` matrix identifying the location of NaN entries
+- existence of negative entries. If `True`, map the entries to $0$
+- [optional] if confounds are given, check the existence of NaN entries. If `True`, perform simple imputation to fill in the missing entries.
+- [optional] if confounds are given, we translate, rescale the confounds to $[0,1]$ range.
+
+The **main goal** of ICQF is to provide a more interpretable latent factors for tabular data $M$, in which interpretability is enhanced by
+
+- sparsity
+- range of latent factors and factor loadings
+- range of approximated matrix
+- [optional] consideration of confounds, missing entries and optimal factorization configuration
+
+To factorize for $M$, we initialize a ICQF model with bounded constraints on $W$ [`W_upperbd=(True, 1.0)`], $Q$ [`Q_upperbd=(True, 100)`] and the reconstructed matrix $M$ [`M_upperbd=(True, np.max(MF_data.M))`]: 
 
 ```python
 clf = ICQF(n_components=10,
            W_upperbd=(True, 1.0),
-           M_upperbd=(True, np.max(MF_data.M)),
-           Q_upperbd=(True, 100)
+           Q_upperbd=(True, 100),
+           M_upperbd=(True, np.max(MF_data.M))
           )
 ```
 
-ICQF is performed by
+After initializing the model, we can perform ICQF by
 
 ```MF_data, loss = clf.fit_transform(MF_data)```
 
@@ -56,7 +78,7 @@ W = MF_data.W
 Q = MF_data.Q
 ```
 
-Qualitatively, we can compare with the ground-truth by showing them in parallel
+Qualitatively, we can compare with the ground-truth by visualizing them using `show_synthetic_result` function
 
 ```
 show_synthetic_result(MF_data, true_W, true_Q)
@@ -79,21 +101,48 @@ We store the data matrix as a customized `matrix_class` with the following input
 - `itemlist` : unique keys for item (column ID)
 - `subjlist` : unique keys for subject (row ID)
 
-Given a data matrix `M_raw` with indicator mask matrix `nan_mask` and confound matrix `confound_raw` , we can run the following code to initialize the data class:
+
+
+A data matrix $M$ can be assigned as `M_raw` item or `M` item in `matrix_class`. If `M_raw` is given, `check_input()` will check
+
+- existence of NaN entries. If `True`, create `nan_mask` matrix identifying the location of NaN entries
+- existence of negative entries. If `True`, map the entries to $0$
+
+The transformed matrix will be stored as `M` in `matrix_class`.
+
+Otherwise, users can provide `M` and `nan_mask` manually and perform `check_input()` if needed.
+
+Simialrly, the corresponding confounds matrix can be assigned as `confound_raw` item or `confound` item in `matrix_class`. If `confound_raw` is given , `check_input()` will
+
+- check the existence of NaN entries. If `True`, perform simple imputation to fill in the missing entries.
+- translate, rescale the confounds to $[0,1]$ range.
+
+The transformed confound matrix will be stored as `confound` in `matrix_class`.
+
+Users can also provide `confound` manually.
+
+As an example, given a data matrix `M_data` with NaN data mask `M_mask` and confounds `M_confound`, we can run the following code to initialize the data class object:
 
 ```python
-MF_data = matrix_class(M_raw=M_raw, confound_raw=confound_raw, nan_mask=nan_mask)
+MF_data = matrix_class(M_raw=M_data, confound_raw=M_confound, nan_mask=M_mask)
 ```
 
 
 
 #### Parameters
 
-- `n_components` : **int, default=2** latent dimension. To estimate, see `detect_dim` in **Methods** section.
-- `method` : **{'admm', 'cd', 'hybrid'}, default='cd'**. Method used to optimize `W` and `Q` subproblems.
-- `W_beta` : **float, default=0.0**. Strength of regularizer on `W`. Set it to zero to have no regularization.
-- `Q_beta` : **float, default=0.0**. Strength of regularizer on `Q`. Set it to zero to have no regularization
-- `regularizer` : **{1, 2}, default=1**. Type of regularizer. For L-1 (sparsity) choose `1`. For L-2 (smoothness), choose `2`.
+There are multiple parameters to initialize the ICQF model. We divide them into **essential** and **optional** parameters:
+
+##### Essential parameters
+
+- `n_components` : **int, default=2** latent dimension. To estimate automatically, see `detect_dimension` in **Methods** section.
+- `regularizer` : **{1, 2}, default=1**. Type of regularizer. For L-1 (sparsity) choose `1`. For L-2 (smoothness), choose `2`. In general, sparsity helps improving interpretability of the factorization results.
+- `W_beta` : **float, default=0.0**. Strength of regularizer on `W`. Set it to zero to have no regularization. (Factors reminder). To estimate automatically, see `detect_dimension` in **Methods** section. In most cases, `W_beta` $\in [0, 1]$ induces strong enough regularization. 
+- `Q_beta` : **float, default=0.0**. Strength of regularizer on `Q`. Set it to zero to have no regularization (question loading reminder). To estimate automatically, see `detect_dimension` in **Methods** section. In most cases, `Q_beta` $\in [0, 1]$ induces strong enough regularization.
+
+##### Optional parameters
+
+- `method` : **{'admm', 'cd', 'hybrid'}, default='cd'**. Method used to optimize `W` and `Q` subproblems. (go down)
 - `rho` : **float, default=3.0**. Penalty parameter. The larger the `rho`, the faster it converges to local minimum. A smaller `rho` often gives a better local minimum. Theoretically, $\rho \geq \sqrt{2}$ to guarantee convergnence.
 - `tau` : **float, default=3.0**. Penalty parameter for **`method`='admm'**.
 - `W_upperbd` : **tuple, default=(True, 1.0)**. Used for constraining the upper bound of entries of `W`. If the first entry of the tuple is `True`, the optimized `W` is bounded above by the second entry of the tuple. Default upper bound for `W` is 1.0. If the first entry of the tuple is `False`, no upper bound on `W` is introduced and the second entry is ignored.
@@ -101,7 +150,7 @@ MF_data = matrix_class(M_raw=M_raw, confound_raw=confound_raw, nan_mask=nan_mask
 - `M_upperbd` : **tuple, default=(True, 1.0)**. Used for constraining the upper bound of entries of `M`. If the first entry of the tuple is `True`, the optimized `M` is bounded above by the second entry of the tuple. If the first entry of the tuple is `False`, no upper bound on `M` is introduced and the second entry is ignored.
 - `min_iter` : **int, default=10**. Minimum number of iteration..
 - `max_iter` : **int, default=200**. Maximum number of itererations.
-- `admm_iter` : **int, default=5**. Number of ADMM iterations if `method`='hybrid' is used. For more details on the 'hybrid' solver, see **Methods** section.
+- `admm_iter` : **int, default=5**. Number of ADMM iterations if `method='hybrid'` is used. For more details on the 'hybrid' solver, see **Methods** section.
 - `tol` : **float, default 1e-4**. Tolerance of the stopping criterion (relative error between successive iteration ).
 - `verbose` : **int, default=0**. Whether to be verbose.
 
@@ -119,10 +168,10 @@ MF_data = matrix_class(M_raw=M_raw, confound_raw=confound_raw, nan_mask=nan_mask
   - `dimension_list` : **list[int], default=None**. List of integers to test for optimal latent dimension. If `None`, an automatic estimation of dimension $d$ using parallel analysis is performed and test the optimal dimension within the range $[ \max(d-10, 2), d+10]$.
   - `W_beta_list` : **list[float], default=None**. List of floats to test for optimal regularization strength. If `None`, it tests the optimal regularization for $W$ within $[0.0, 0.01, 0.1, 0.2, 0.5]$.
   - `Q_beta_list` : **list[float], default=None**. List of floats to test for optimal regularization strength. If `None`, it tests the optimal regularization for $Q$ within $[0.0, 0.01, 0.1, 0.2, 0.5]$.
-  - `mask_type` : **{'random', 'block'}, default='random'**. Ways to choose the sub-block matrix for cross validation. If `random`, `1/nfold` of entries will be choose random within the whole matrix as the cross-validation held-out set. If `block`, the data matrix will first be subdivided into `nrow` $\times$ `ncol` sub-blocks, then $\lfloor$ `nrow` $\times$ `ncol` / `nfold`  $\rfloor$ sub-blocks will be chosen as the cross-validation held-out set.
   - `repeat` : **int, default=1**. Number of cross-validation for each configuration.
   - `nfold` : **int, default=5**. Number of folds in cross-validation.
   - `random_fold` : **boolean, default=True**. If `True`, only one random fold will be selected in each cross validation. The aim is to massively reduce the computation time. The optimal configuration tested under this setting serves as a rough estimation only. Used in care. If `False`, validation errors for each fold will be computed, yet the computation cost will be multiplied by `nfold`.
+  - `mask_type` : **{'random', 'block'}, default='random'**. Ways to choose the sub-block matrix for cross validation. If `random`, `1/nfold` of entries will be choose random within the whole matrix as the cross-validation held-out set. If `block`, the data matrix will first be subdivided into `nrow` $\times$ `ncol` sub-blocks, then $\lfloor$ `nrow` $\times$ `ncol` / `nfold`  $\rfloor$ sub-blocks will be chosen as the cross-validation held-out set.
   - `detection` : **{'kneed', 'lowest'}, default='kneed'**. Way to detect the optimal dimension. `'kneed'` uses the kneed algorithm to detect the changing point, via `'lowest'` simply look for the configuration achieving lowest, averaged cross-validation error. `'kneed'` is recommended.
   - `nrow` : **int, default=10**. Used for `mask_type='block'`. The data matrix will be divided into `nrow` blocks (first dimension).
   - `ncol` : **int, default=10**. Used for `mask_type='block'`. The data matrix will be divided into `ncol` blocks (second dimension).
@@ -254,6 +303,8 @@ MF_data, loss = clf.fit_transform(MF_data)
 
 Very often the latent dimension is not know a-priori, not to mention the strength of regularizers. For users who wish to explore the dataset automatically, the function `detect_dimension` can be utilized to estimate the optimal, data-driven configuration via block cross-validation.
 
+##### Example 1
+
 We first generate a simple example
 
 ```python
@@ -274,19 +325,51 @@ and obtain the full profile `embed_stat_list`
 
 Here the optimal configuration detected is dimension=10, $\beta_W = 0.001$, $\beta_Q = 0.001$.
 
-#### Synthetic CBCL questionnaire example
+##### Example 2
 
+(This example may take some time 旦~)
 
+We generate a more realistic example with small sample size, noise, confounds and missing entries:
 
+```python
+true_W, true_Q, confound_raw, M_clean, M, nan_mask = simulation(1000, 100, 10, 50, 
+                                                                density=0.3,
+                                                                noise=True, delta=0.05, 
+                                                                confound=True,
+                                                                missing_ratio=0.05,
+                                                                visualize=True)
+```
 
+We create the `matrix_class` object to store the data matrix and initialize the ICQF model as before:
+
+```python
+MF_data = matrix_class(M=M, nan_mask=nan_mask, confound_raw=confound_raw)
+MF_data.check_input()
+```
+
+```python
+clf = ICQF(n_components=10,
+           W_upperbd=(True, 1.0),
+           M_upperbd=(True, np.max(MF_data.M)),
+           Q_upperbd=(False, 0))
+```
+
+In certain scenarios, the upper bound of `Q` may be unknown. Therefore, we solely impose an upper bound constraint on `W` to enhance interpretability. Specifically, we set the upper bound of `W` to $1$, aligning it with the scale of confounding factors for the sake of conciseness.
+
+To detect optimal configuration, we use `detect_dimension` function:
+
+```python
+optimal_MF_data, optimal_stat, embed_stat_list = clf.detect_dimension(MF_data,
+                                                                      repeat=2,
+                                                                      nfold=10,
+                                                                      random_fold=False)
+```
+
+When dealing with data that contains noise and missing entries, the identification of the elbow in the validation error curve can often be challenging or ambiguous. To ensure robustness, we recommend to set `random_fold=False`, even though it may require additional time. Increasing `repeat` is also helpful.
 
 
 
 ### Supports
-
-
-
-### 
 
 
 
