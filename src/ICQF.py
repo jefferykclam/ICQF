@@ -920,29 +920,17 @@ class ICQF(TransformerMixin, BaseEstimator):
 
                     embed_stat, MF_data, loss_history = self.embed_holdout(MF_data, mask_train, mask_valid)
                     embed_stat_pd.loc[len(embed_stat_pd)] = [r, fold] + embed_stat
-                    
-                    avg_stat = embed_stat_pd.groupby(['dimension', 'W_beta', 'Q_beta'])['valid_error'].mean().reset_index()
 
-                    # if optimal_stat is not None:
-                    #     if embed_stat[-1] < optimal_stat[-1]:
-                    #         optimal_stat = embed_stat
-                    #         optimal_MF_data = MF_data
-                    #         optimal_loss_history = loss_history
-                    # else:
-                    #     optimal_stat = embed_stat
-                    #     optimal_MF_data = MF_data
-                    #     optimal_loss_history = loss_history
-                    
                     message = f"repeat-[{r+1:2.0f}]: config-[{dim:2.0f},{W_beta:1.3f},{Q_beta:1.3f}], "
                     if random_fold:
                         message += f"fold-[{fold+1:2.0f}], "
                     else:
                         message += f"fold-[{fold+1:2.0f}/{nfold:2.0f}]"
-                    # message += f"optimal-[{optimal_stat[0]:2.0f}, {optimal_stat[-1]:2.3f}]"
-                    # message += f"optimal-[{optimal_config[0]:2.0f}, {optimal_config[-1]:2.3f}]"
-                        
+
                     tqdm_range.set_description(message)
                     tqdm_range.refresh()
+                    
+            avg_stat = embed_stat_pd.groupby(['dimension', 'W_beta', 'Q_beta'])['valid_error'].mean().reset_index()
                     
             if detection == 'kneed':
                 optimal_config = avg_stat.loc[avg_stat['valid_error'].idxmin()].values
@@ -991,25 +979,32 @@ class ICQF(TransformerMixin, BaseEstimator):
                 reconst_err = mean_err['valid_error'].values
                 if (config == optimal_config[:3]).all():
                     ax.plot(search_range, reconst_err, c=cmap[np.mod(idx,10)],
-                            alpha=1, label=f"({W_beta:1.3f},{Q_beta:1.3f})")
+                            alpha=1, linewidth=3, label=f"({W_beta:1.3f},{Q_beta:1.3f})")
                     sns.lineplot(data=config_err, x="dimension", y="valid_error", alpha=0.1, ax=ax, 
                              color=cmap[np.mod(idx,10)], linestyle='', errorbar=('ci',100))
                     # try: 
                     xmin, xmax = ax.get_xlim()
                     ymin, ymax = ax.get_ylim()
-                    kn = KneeLocator(search_range, reconst_err, curve='convex', direction='decreasing')
-                    ax.vlines(int(kn.knee), ymin, ymax, linestyle='--', colors=cmap[np.mod(idx,10)])
-                    ax.hlines(reconst_err[np.where(search_range==kn.knee)[0]], xmin, xmax, linestyle='--', colors=cmap[np.mod(idx,10)])
-                    ax.scatter(int(kn.knee), reconst_err[np.where(search_range==kn.knee)[0]], marker='o')
-                    # except:
-                    #     pass
+                    try:
+                        kn = KneeLocator(search_range, reconst_err, curve='convex', direction='decreasing')
+                        ax.vlines(int(kn.knee), ymin, ymax, linestyle='--', colors='b', label='elbow')
+                        ax.hlines(reconst_err[np.where(search_range==kn.knee)[0]], xmin, xmax, linestyle='--', colors='b')
+                        ax.scatter(int(kn.knee), reconst_err[np.where(search_range==kn.knee)[0]], marker='o', c='b')
+                    except:
+                        pass
+                    
+                    lowest_err = reconst_err[np.argmin(reconst_err)]
+                    lowest_dim = search_range[np.argmin(reconst_err)]
+                    ax.vlines(lowest_dim, ymin, ymax, linestyle='--', colors='k', label='lowest')
+                    ax.hlines(lowest_err, xmin, xmax, linestyle='--', colors='k')
+                    ax.scatter(lowest_dim, lowest_err, marker='o', c='k')
                       
                 else:
                     ax.plot(search_range, reconst_err, c=cmap[np.mod(idx,10)],
                             alpha=0.1)
                     sns.lineplot(data=config_err, x="dimension", y="valid_error", alpha=0.1, ax=ax, 
                              color='grey', linestyle='', errorbar=('ci',100))
-                
+            ax.set_xlim(search_range[0], search_range[-1])
             pyplot.show()
             
                                     
