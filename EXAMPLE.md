@@ -1,5 +1,3 @@
-[TOC]
-
 # Examples
 
 ## Synthetic example with confounds
