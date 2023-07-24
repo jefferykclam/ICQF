@@ -42,8 +42,10 @@ $$
 
 
 with $\gamma = \frac{n}{m}\max(M)$. The matrix norm is defined as
+
+
 $$
-\Vert A \Vert_{p, q} := ( \sum^m_{i=1} ( \sum^n_{j=1} \vert A_{ij} \vert^p )^{q/p} )^{1/q}
+\Vert A \Vert_{p, q} := \left( \sum^m_{i=1} \left( \sum^n_{j=1} \vert A_{ij} \vert^p \right)^{q/p} \right)^{1/q}
 $$
 
 
