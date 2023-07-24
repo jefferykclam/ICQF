@@ -146,6 +146,10 @@ The elbows of the reconstruction error indicate that the optimal configuration w
 - latent dimension = 10
 - $L_1$ regularization strength for $W$ and $Q$ : (0.001, 0.001)
 
+
+
+### Links
+
 ---
 
 For more examples, please visit [Example](./EXAMPLE.md) and the [jupyter notebook](./demonstration.ipynb).
