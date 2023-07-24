@@ -1,7 +1,5 @@
 # Documentation
 
-
-
 ## Mathematical Formulation
 
 ---
@@ -23,7 +21,7 @@ Lastly, we incorporate a vector of ones into $C$ to facilitate intercept modelin
 
 We seek to factorize the questionnaire matrix $M$ as the product of a $n \times k$ factor matrix $W \in [0,1]$, with the confound matrix $C \in [0,1]$ as optional additional columns, and a $m \times (k+c)$ loading matrix $Q := [Q_R, Q_C]$, with a loading pattern $Q_R$ over $m$ questions for each of the $k$ factors (and $Q_C$ for optional confounds). Our problem optimizes for $W, Q$:
 $$
-\text{minimize} \quad 1/2 \Vert \mathcal{M} \odot (M - Z) \Vert_F^2 + \beta \cdot R(W, Q)
+\text{minimize} \quad 1/2 \Vert \mathcal{M} \odot (M - Z) \Vert_F^2 + \beta R(W, Q)
 $$
 such that
 
@@ -41,13 +39,11 @@ $$
 
 with $\gamma = \frac{n}{m}\max(M)$. The matrix norm is defined as
 $$
-\Vert A \Vert_{p, q} := ( \sum^m_{i=1} ( \sum^n_{j=1} |A_{ij}|^p )^{q/p} )^{1/q}
+\Vert A \Vert_{p, q} := ( \sum^m_{i=1} ( \sum^n_{j=1} \vert A_{ij} \vert^p )^{q/p} )^{1/q}
 $$
- 
+ In this package, $p=q=\{1,2\}$ for the $L_1$ and $L_2$ regularization.
 
-In this package, $p=q=\{1,2\}$ for the $L_1$ and $L_2$ regularization.
-
-Similar to the standard Non-negative Matrix Factorization (NMF) approach, ICQF also optimizes for non-negative matrices W and Q. However, ICQF incorporates additional constraints on W, Q, and the reconstruction matrix WQ^T (or [W, C][Q, Q_C]^T if auxiliary variables exist).
+Similar to the standard Non-negative Matrix Factorization (NMF) approach, ICQF also optimizes for non-negative matrices W and Q. However, ICQF incorporates additional constraints on $W, Q$, and the reconstruction matrix $WQ^T$ (or $[W, C][Q, Q_C]^T$ if auxiliary variables exist).
 
 By imposing an upper bound on W, along with the upper bound on the reconstruction matrix, ICQF ensures that all latent factors are equally important in the factorization process. This property greatly enhances interpretability and facilitates the extension of ICQF to multi-questionnaire settings.
 
