@@ -7,7 +7,7 @@ import copy
 
 from scipy.spatial.distance import cosine
 
-def simulation(nrow, ncol, ndict, overlap=None, density=0.3,
+def simulation(nrow, ncol, ndict=10, overlap=None, density=0.3,
                Q_upperbd=100, lowerbd=0,
                noise=False, delta=0.1,
                missing_ratio = 0.0,
@@ -88,16 +88,18 @@ def simulation(nrow, ncol, ndict, overlap=None, density=0.3,
         
         if noise:
             sns.heatmap(M, ax=ax1, cmap="Blues", mask=1-nan_mask, cbar=False)
-            ax1.set_title('$M, \delta$={}, range:[{:.2f}, {:.2f}]'.format(delta, np.nanmin(M), np.nanmax(M)))
+            ax1.set_title('$M$, $\delta$={}, range:[{:.2f}, {:.2f}]'.format(delta, np.nanmin(M), np.nanmax(M)))
             bottom, top = ax1.get_ylim()
             ax1.set_ylim(bottom + 1.5, top - 0.5)   
         else:
             sns.heatmap(M_clean, ax=ax1, cmap="Blues", mask=1-nan_mask, cbar=False)
-            ax1.set_title('$M, range:[{:.2f}, {:.2f}]'.format(np.nanmin(M), np.nanmax(M)))
+            ax1.set_title('$M$, range:[{:.2f}, {:.2f}]'.format(np.nanmin(M), np.nanmax(M)))
             bottom, top = ax1.get_ylim()
             ax1.set_ylim(bottom + 1.5, top - 0.5)
 
-        sns.heatmap(true_W, ax=ax2, cmap="Blues", cbar=False)
+        ax1.set_ylabel('subjects')
+        ax1.set_xlabel('items')
+        sns.heatmap(true_W, ax=ax2, cmap="Greens", cbar=False)
         if confound is not None:
             ax2.set_title('$[W, C]$, range:[{:.2f}, {:.2f}]'.format(np.min(true_W), np.max(true_W)))
         else:
@@ -105,13 +107,19 @@ def simulation(nrow, ncol, ndict, overlap=None, density=0.3,
         bottom, top = ax2.get_ylim()
         ax2.set_ylim(bottom + 1.5, top - 0.5)
 
-        sns.heatmap(true_Q, ax=ax3, cmap="Blues", cbar=False)
+        ax2.set_ylabel('subjects')
+        ax2.set_xlabel('latent dimension')
+
+        sns.heatmap(true_Q, ax=ax3, cmap="Oranges", cbar=False)
         if confound is not None:
             ax3.set_title('$[Q, Q_c]$, range:[{:.2f}, {:.2f}]'.format(np.min(true_Q), np.max(true_Q)))
         else:
             ax3.set_title('$Q$, range:[{:.2f}, {:.2f}]'.format(np.min(true_Q), np.max(true_Q)))
         bottom, top = ax3.get_ylim()
         ax3.set_ylim(bottom + 1.5, top - 0.5)
+
+        ax3.set_ylabel('items')
+        ax3.set_xlabel('latent dimension')
 
         pyplot.tight_layout()
         pyplot.show()
@@ -165,23 +173,31 @@ def show_synthetic_result(MF_data, true_W, true_Q):
     bottom, top = ax1.get_ylim()
     ax1.set_ylim(bottom + 1.5, top - 0.5)
 
-    sns.heatmap(true_W, ax=ax2, cmap="Blues", cbar=False)
+    ax1.set_xticks([])
+
+    sns.heatmap(true_W, ax=ax2, cmap="Greens", cbar=False)
     # ax2.set_title('W, range:[{:.2f}, {:.2f}]'.format(np.min(true_W), np.max(true_W)))
     if MF_data.C is not None:
         ax2.set_title('$[W, C]$, range:[{:.2f}, {:.2f}]'.format(np.min(true_W), np.max(true_W)))
+        ax2.set_xticks([])
     else:
         ax2.set_title('$W$, range:[{:.2f}, {:.2f}]'.format(np.min(true_W), np.max(true_W)))
     bottom, top = ax2.get_ylim()
     ax2.set_ylim(bottom + 1.5, top - 0.5)
 
-    sns.heatmap(true_Q, ax=ax3, cmap="Blues", cbar=False)
+    ax2.set_xticks([])
+
+    sns.heatmap(true_Q, ax=ax3, cmap="Oranges", cbar=False)
     # ax3.set_title('Q, range:[{:.2f}, {:.2f}]'.format(np.min(true_Q), np.max(true_Q)))
     if MF_data.C is not None:
         ax3.set_title('$[Q, Q_c]$, range:[{:.2f}, {:.2f}]'.format(np.min(true_Q), np.max(true_Q)))
+        ax3.set_xticks([])
     else:
         ax3.set_title('$Q$, range:[{:.2f}, {:.2f}]'.format(np.min(true_Q), np.max(true_Q)))
     bottom, top = ax3.get_ylim()
     ax3.set_ylim(bottom + 1.5, top - 0.5)
+
+    ax3.set_xticks([])
 
     
     sns.heatmap(MF_data.W@(MF_data.Q.T), ax=ax4, cmap="Blues", cbar=False)
@@ -189,26 +205,34 @@ def show_synthetic_result(MF_data, true_W, true_Q):
     bottom, top = ax4.get_ylim()
     ax4.set_ylim(bottom + 1.5, top - 0.5)
 
+    ax4.set_ylabel('subjects')
+    ax4.set_xlabel('items')
+
     if MF_data.C is None:
-        sns.heatmap(match_W, ax=ax5, cmap="Blues", cbar=False)
-        ax5.set_title('W, range:[{:.2f}, {:.2f}]'.format(np.min(MF_data.W), np.max(MF_data.W)))
+        sns.heatmap(match_W, ax=ax5, cmap="Greens", cbar=False)
+        ax5.set_title('$W$, range:[{:.2f}, {:.2f}]'.format(np.min(MF_data.W), np.max(MF_data.W)))
         bottom, top = ax5.get_ylim()
         ax5.set_ylim(bottom + 1.5, top - 0.5)
+
+        ax5.set_xlabel('latent dimension')
         
-        sns.heatmap(MF_data.Q[:, orders.astype('int')], ax=ax6, cmap="Blues", cbar=False)
-        ax6.set_title('Q, range:[{:.2f}, {:.2f}]'.format(np.min(MF_data.Q), np.max(MF_data.Q)))
+        sns.heatmap(MF_data.Q[:, orders.astype('int')], ax=ax6, cmap="Oranges", cbar=False)
+        ax6.set_title('$Q$, range:[{:.2f}, {:.2f}]'.format(np.min(MF_data.Q), np.max(MF_data.Q)))
         bottom, top = ax6.get_ylim()
         ax6.set_ylim(bottom + 1.5, top - 0.5)
+        ax6.set_xlabel('latent dimension')
     else:
-        sns.heatmap(np.hstack((match_W, MF_data.C)), ax=ax5, cmap="Blues", cbar=False)
-        ax5.set_title('[W, C], range:[{:.2f}, {:.2f}]'.format(np.min(MF_data.W), np.max(MF_data.W)))
+        sns.heatmap(np.hstack((match_W, MF_data.C)), ax=ax5, cmap="Greens", cbar=False)
+        ax5.set_title('$[W, C]$, range:[{:.2f}, {:.2f}]'.format(np.min(MF_data.W), np.max(MF_data.W)))
         bottom, top = ax5.get_ylim()
         ax5.set_ylim(bottom + 1.5, top - 0.5)
+        ax5.set_xlabel('latent dimension')
     
-        sns.heatmap(np.hstack((MF_data.Q[:, orders.astype('int')], MF_data.Qc)), ax=ax6, cmap="Blues", cbar=False)
-        ax6.set_title('[Q, Qc], range:[{:.2f}, {:.2f}]'.format(np.min(MF_data.Q), np.max(MF_data.Q)))
+        sns.heatmap(np.hstack((MF_data.Q[:, orders.astype('int')], MF_data.Qc)), ax=ax6, cmap="Oranges", cbar=False)
+        ax6.set_title('$[Q, Qc]$, range:[{:.2f}, {:.2f}]'.format(np.min(MF_data.Q), np.max(MF_data.Q)))
         bottom, top = ax6.get_ylim()
         ax6.set_ylim(bottom + 1.5, top - 0.5)
+        ax6.set_xlabel('latent dimension')
     
     pyplot.tight_layout()
     pyplot.show()

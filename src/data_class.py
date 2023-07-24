@@ -45,12 +45,14 @@ class matrix_class:
         self.aZ = aZ
         
         self.verbose = verbose
+
+        self.check_input()
         
     def vprint(self, str):
         if self.verbose==True:
             print(str)
         
-    def check_input(self, verbose=True):
+    def check_input(self):
         
         if self.M_raw is None:
             self.vprint('No M_raw[matrix] provided')

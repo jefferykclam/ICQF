@@ -631,14 +631,16 @@ class ICQF(TransformerMixin, BaseEstimator):
         
     
     def fit_transform(self, matrix_class, svd_components=None):
-        
-        tic = time.perf_counter()
-        MF_data = self.initialize(matrix_class, svd_components=svd_components)
-        self.MF_init = copy.deepcopy(MF_data)
-        toc = time.perf_counter()
-        # print(f"Initialization time: {toc-tic:0.4f}s")
-        self.MF_data_, self.loss_history_ = self._fit_transform(MF_data, update_Q=True)
-        
+
+        if self.n_components is None:
+            _ = self.detect_dimension(matrix_class)
+        else:
+            tic = time.perf_counter()
+            MF_data = self.initialize(matrix_class, svd_components=svd_components)
+            self.MF_init = copy.deepcopy(MF_data)
+            toc = time.perf_counter()
+            # print(f"Initialization time: {toc-tic:0.4f}s")
+            self.MF_data_, self.loss_history_ = self._fit_transform(MF_data, update_Q=True)
         return self.MF_data_, self.loss_history_
 
     def fit(self, matrix_class):
@@ -824,8 +826,8 @@ class ICQF(TransformerMixin, BaseEstimator):
                          Q_beta_list=None,
                          separate_beta=False,
                          mask_type='random',
-                         repeat=1,
-                         nfold=5,
+                         repeat=5,
+                         nfold=10,
                          random_fold=True,
                          detection='kneed',
                          nrow=10,
@@ -877,8 +879,9 @@ class ICQF(TransformerMixin, BaseEstimator):
             better = (eigs - result[0][::-1])
             horn_dim = np.sum(better > 0)
 
-            dimension_list = np.arange(np.maximum(2,int(horn_dim)-10), int(horn_dim)+11) #-5,+6
-            print('dimension detection range: {} - {} ({})'.format(dimension_list[0], dimension_list[-1], horn_dim))
+            dimension_list = np.arange(np.maximum(2,int(horn_dim)-5), int(horn_dim)+6) #-5,+6
+            # print('dimension detection range: {} - {} ({})'.format(dimension_list[0], dimension_list[-1], horn_dim))
+            print('dimension detection range: {} - {}'.format(dimension_list[0], dimension_list[-1]))
 
         config_list = itertools.product(dimension_list, config_list)
         config_list = [(d, *betas) for d, betas in config_list]
@@ -945,6 +948,7 @@ class ICQF(TransformerMixin, BaseEstimator):
                     optimal_config[0] = int(kn.knee)
                 except:
                     self.vprint('optimal kneed point cannot be detected, report lowest point instead.')
+
                     
             elif detection == 'lowest':
                 optimal_config = avg_stat.loc[avg_stat['valid_error'].idxmin()].values
