@@ -42,8 +42,8 @@ You may try ICQF if you wish to:
 - inclusion of auxiliary variables $C$ (or confound controlling)
 
   > Auxiliary variables ($C$) are known variables to which the variable of interest ($W$) is approximately related. Examples of auxiliary variables such as Age, Sex of subjects, can be modeled by ICQF during the decomposition.
-  
-  <img src="README.assets/image-20230721095253704.png" alt="image-20230721095253704" style="zoom:20%;" />
+
+<img src="README.assets/image-20230721095253704.png" alt="image-20230721095253704" style="zoom:20%;" />
 
 ### Getting start
 
