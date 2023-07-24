@@ -25,6 +25,8 @@ We seek to factorize the questionnaire matrix $M$ as the product of a $n \times 
 $$
 Loss = \frac{1}{2} \Vert \mathcal{M} \odot (M - Z) \Vert_F^2 + \beta \cdot R(W, Q)
 $$
+
+
 such that
 
 - $[W, C] Q^{T} = Z,$ 
@@ -43,6 +45,8 @@ with $\gamma = \frac{n}{m}\max(M)$. The matrix norm is defined as
 $$
 \Vert A \Vert_{p, q} := ( \sum^m_{i=1} ( \sum^n_{j=1} \vert A_{ij} \vert^p )^{q/p} )^{1/q}
 $$
+
+
  In this package, $p=q=\{1,2\}$ for the $L_1$ and $L_2$ regularization.
 
 Similar to the standard Non-negative Matrix Factorization (NMF) approach, ICQF also optimizes for non-negative matrices W and Q. However, ICQF incorporates additional constraints on $W, Q$, and the reconstruction matrix $WQ^T$ (or $[W, C][Q, Q_C]^T$ if auxiliary variables exist).
