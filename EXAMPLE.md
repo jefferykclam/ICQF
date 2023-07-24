@@ -147,7 +147,7 @@ optimal_MF_data, optimal_stat, embed_stat_list = clf.detect_dimension(MF_data)
 
 and obtain the full profile `embed_stat_list`
 
-<img src="EXAMPLE.assets/image-20230724110734150.png" alt="image-20230724110734150" style="zoom:20%;" />
+<img src="EXAMPLE.assets/image-20230724110734150.png" alt="image-20230724110734150" width="300;" />
 
 Here the optimal configuration detected is dimension $=10$, $\beta_W = 0.001$, $\beta_Q = 0.001$.
 
@@ -169,7 +169,7 @@ When dealing with data that contains noise and missing entries, the identificati
 
 ICQF also supports separate estimation of regularization strength $\beta_W$ and $\beta_Q$ by setting `separate_beta=False`. However, it will add one extra dimension in the hyper-parameter search and you may expect a longer time for optimal configuration detection.
 
-<img src="EXAMPLE.assets/image-20230724112550019.png" alt="image-20230724112550019" style="zoom:20%;" />
+<img src="EXAMPLE.assets/image-20230724112550019.png" alt="image-20230724112550019" width="300;" />
 
 ## Synthetic example with confounds, noise & missing variables
 
@@ -213,7 +213,7 @@ As the latent dimension is unknown, we set `n_components=None` and the ICQF algo
 
 After the detection, the profile of the blockwise cross-validation will be visualized:
 
-<img src="EXAMPLE.assets/image-20230724112723818.png" alt="image-20230724112723818" style="zoom:20%;" />
+<img src="EXAMPLE.assets/image-20230724112723818.png" alt="image-20230724112723818" width="300;" />
 
 The elbows of the reconstruction error indicate that the optimal configuration would be 
 
