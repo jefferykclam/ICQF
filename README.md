@@ -139,7 +139,7 @@ MF_data, loss = clf.fit_transform(MF_data)
 
 After the detection, the profile of the blockwise cross-validation will be visualized:
 
-<img src="README.assets/image-20230724102854510.png" alt="image-20230724102854510" style="zoom:30%;" />
+<img src="README.assets/image-20230724102854510.png" alt="image-20230724102854510" style="zoom:20%;" />
 
 The elbows of the reconstruction error indicate that the optimal configuration would be 
 
