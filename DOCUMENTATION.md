@@ -104,10 +104,10 @@ There are multiple parameters to initialize the ICQF model. We divide them into 
 
 ### Essential parameters
 
-- `n_components` : **int, default=2** latent dimension. To estimate automatically, see `detect_dimension` in **Methods** section.
+- `n_components` : **int, default=2** latent dimension. To estimate automatically, see `detect_dimension` in **Functions** section.
 - `regularizer` : **{1, 2}, default=1**. Type of regularizer. For L-1 (sparsity) choose `1`. For L-2 (smoothness), choose `2`. In general, sparsity helps improving interpretability of the factorization results.
-- `W_beta` : **float, default=0.0**. Strength of regularizer on `W`. Set it to zero to have no regularization. (Factors reminder). To estimate automatically, see `detect_dimension` in **Methods** section. In most cases, `W_beta` $\in [0, 1]$ induces strong enough regularization. 
-- `Q_beta` : **float, default=0.0**. Strength of regularizer on `Q`. Set it to zero to have no regularization (question loading reminder). To estimate automatically, see `detect_dimension` in **Methods** section. In most cases, `Q_beta` $\in [0, 1]$ induces strong enough regularization.
+- `W_beta` : **float, default=0.0**. Strength of regularizer on `W`. Set it to zero to have no regularization. (Factors reminder). To estimate automatically, see `detect_dimension` in **Functions** section. In most cases, `W_beta` $\in [0, 1]$ induces strong enough regularization. 
+- `Q_beta` : **float, default=0.0**. Strength of regularizer on `Q`. Set it to zero to have no regularization (question loading reminder). To estimate automatically, see `detect_dimension` in **Functions** section. In most cases, `Q_beta` $\in [0, 1]$ induces strong enough regularization.
 
 ### Optional parameters
 

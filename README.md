@@ -127,10 +127,11 @@ show_synthetic_result(MF_data, true_W, true_Q)
 
 ---
 
-If you are uncertain about the appropriate latent dimension (`n_components`) and/or the strength of regularization, you can conveniently set `n_components=None` as the default option. In such cases, ICQF will internally execute the function `detect_dimension` to automatically identify the optimal latent dimension and the corresponding regularization strength.
+If you are uncertain about the appropriate latent dimension (`n_components`) and/or the strength of regularization, you can conveniently set `n_components=None`. In such cases, ICQF will internally execute the function `detect_dimension` to automatically identify the optimal latent dimension and the corresponding regularization strength.
 
 ```python
-clf = ICQF(W_upperbd=(True, 1.0),
+clf = ICQF(n_components=None,
+           W_upperbd=(True, 1.0),
            Q_upperbd=(True, 100),
            M_upperbd=(True, np.max(MF_data.M))
           )
