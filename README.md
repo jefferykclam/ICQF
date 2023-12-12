@@ -1,5 +1,5 @@
-# ICQF_beta
-[closed beta version for ICQF package]
+# ICQF (beta version)
+beta version (0.0-b.1) for ICQF package
 
 ### What is ICQF
 
