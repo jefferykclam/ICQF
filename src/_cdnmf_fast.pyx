@@ -1,9 +1,8 @@
-#!python
-#cython: language_level=3
-
-# Author: Mathieu Blondel, Tom Dupre la Tour
-# License: BSD 3 clause
-
+"""
+This code is developed based on the following:
+https://github.com/scikit-learn/scikit-learn/blob/main/sklearn/decomposition/_cdnmf_fast.pyx
+by authors: Mathieu Blondel, Tom Dupre la Tour
+"""
 
 import cython
 from cython cimport floating

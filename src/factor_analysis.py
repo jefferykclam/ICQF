@@ -165,6 +165,8 @@ def _varimax(loadings, normalize=False, max_iter=500, tol=1e-5):
     """
     Perform varimax (orthogonal) rotation, with optional
     Kaiser normalization.
+    This implementation is adatped from
+    https://github.com/EducationalTestingService/factor_analyzer/tree/main
 
     Parameters
     ----------
@@ -236,6 +238,9 @@ def _promax(loadings, normalize=False, power=4):
     """
     Perform promax (oblique) rotation, with optional
     Kaiser normalization.
+    
+    This implementation is adatped from
+    https://github.com/EducationalTestingService/factor_analyzer/tree/main
 
     Parameters
     ----------
@@ -299,10 +304,6 @@ def _promax(loadings, normalize=False, power=4):
     # convert loadings matrix to data frame
     loadings = z.copy()
     return loadings, rotation_mtx, phi
-
-
-
-
 
 
 __all__ = ["parallel_analysis", "parallel_analysis_serial"]
