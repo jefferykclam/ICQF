@@ -1,0 +1,44 @@
+[build-system]
+requires = ["hatchling", "Cython>=0.29"]
+build-backend = "hatchling.build"
+
+[project]
+name = "ICQF"
+version = "0.0.1"
+authors = [
+  { name="Ka Chun Lam", email="kachun.lam@nih.gov" },
+]
+description = "Interpretability Constrained Questionnaire Factorization"
+readme = "README.md"
+license = { text="MIT" }
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "numpy>=1.18.0",
+    "scipy>=1.5.0",
+    "pandas>=1.0.0",
+    "scikit-learn>=0.22.0",
+    "matplotlib>=3.0.0",
+    "seaborn>=0.9.0",
+    "tqdm>=4.40.0",
+    "kneed>=0.7.0",
+    "joblib>=0.14.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=6.0",
+    "black",
+    "flake8"
+]
+
+[project.urls]
+Homepage = "https://github.com/jefferykclam/ICQF"  # Update with actual repo URL
+Repository = "https://github.com/jefferykclam/ICQF"  # Update with actual repo URL
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ICQF"]
