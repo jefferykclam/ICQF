@@ -161,7 +161,7 @@ def greedy_sort(W, true_W):
     return match_W, bestmatch_ordering, bestmatch_cor
 
 
-def show_synthetic_result(MF_data, true_W, true_Q):
+def show_synthetic_result(MF_data, true_W, true_Q, plot_full_recon=False):
 
     match_W, orders, corr = greedy_sort(MF_data.W, true_W)
 
@@ -200,15 +200,17 @@ def show_synthetic_result(MF_data, true_W, true_Q):
     ax3.set_xticks([])
 
     
-    sns.heatmap(MF_data.W@(MF_data.Q.T), ax=ax4, cmap="Blues", cbar=False)
-    ax4.set_title('$WQ^T$, range:[{:.2f}, {:.2f}]'.format(np.min(MF_data.W@(MF_data.Q.T)), np.max(MF_data.W@(MF_data.Q.T))))
-    bottom, top = ax4.get_ylim()
-    ax4.set_ylim(bottom + 1.5, top - 0.5)
 
-    ax4.set_ylabel('subjects')
-    ax4.set_xlabel('items')
 
     if MF_data.C is None:
+        sns.heatmap(MF_data.W@(MF_data.Q.T), ax=ax4, cmap="Blues", cbar=False)
+        ax4.set_title('$WQ^T$, range:[{:.2f}, {:.2f}]'.format(np.min(MF_data.W@(MF_data.Q.T)), np.max(MF_data.W@(MF_data.Q.T))))
+        bottom, top = ax4.get_ylim()
+        ax4.set_ylim(bottom + 1.5, top - 0.5)
+    
+        ax4.set_ylabel('subjects')
+        ax4.set_xlabel('items')
+        
         sns.heatmap(match_W, ax=ax5, cmap="Greens", cbar=False)
         ax5.set_title('$W$, range:[{:.2f}, {:.2f}]'.format(np.min(MF_data.W), np.max(MF_data.W)))
         bottom, top = ax5.get_ylim()
@@ -222,6 +224,20 @@ def show_synthetic_result(MF_data, true_W, true_Q):
         ax6.set_ylim(bottom + 1.5, top - 0.5)
         ax6.set_xlabel('latent dimension')
     else:
+        if plot_full_recon:
+            recon = np.hstack((match_W, MF_data.C)) @ np.hstack((MF_data.Q[:, orders.astype('int')], MF_data.Qc)).T
+            ax4title = '$[W,C][Q,Qc]^T$, range:[{:.2f}, {:.2f}]'.format(np.min(recon), np.max(recon))
+        else:
+            recon = MF_data.W@(MF_data.Q.T)
+            ax4title = '$WQ^T$, range:[{:.2f}, {:.2f}]'.format(np.min(recon), np.max(recon))
+        sns.heatmap(recon, ax=ax4, cmap="Blues", cbar=False)
+        ax4.set_title(ax4title)
+        bottom, top = ax4.get_ylim()
+        ax4.set_ylim(bottom + 1.5, top - 0.5)
+    
+        ax4.set_ylabel('subjects')
+        ax4.set_xlabel('items')
+    
         sns.heatmap(np.hstack((match_W, MF_data.C)), ax=ax5, cmap="Greens", cbar=False)
         ax5.set_title('$[W, C]$, range:[{:.2f}, {:.2f}]'.format(np.min(MF_data.W), np.max(MF_data.W)))
         bottom, top = ax5.get_ylim()
