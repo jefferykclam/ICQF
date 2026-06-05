@@ -1,0 +1,75 @@
+ADMM threads = 191   examples = 64   quick = False
+[  1/64] ex000_n200_d3_s0.02_qb0.01_seed0  -> true=3 pa=3 argmin=3 1se=3 17.06s
+[  2/64] ex001_n200_d3_s0.02_qb0.01_seed1  -> true=3 pa=3 argmin=3 1se=3 11.65s
+[  3/64] ex002_n200_d3_s0.05_qb0.01_seed0  -> true=3 pa=3 argmin=3 1se=3 14.14s
+[  4/64] ex003_n200_d3_s0.05_qb0.01_seed1  -> true=3 pa=3 argmin=3 1se=3 16.26s
+[  5/64] ex004_n200_d3_s0.10_qb0.01_seed0  -> true=3 pa=3 argmin=3 1se=3 12.20s
+[  6/64] ex005_n200_d3_s0.10_qb0.01_seed1  -> true=3 pa=3 argmin=3 1se=3 12.26s
+[  7/64] ex006_n200_d6_s0.02_qb0.01_seed0  -> true=6 pa=6 argmin=7 1se=6 51.51s
+[  8/64] ex007_n200_d6_s0.02_qb0.01_seed1  -> true=6 pa=6 argmin=8 1se=7 24.17s
+[  9/64] ex008_n200_d6_s0.05_qb0.01_seed0  -> true=6 pa=6 argmin=6 1se=6 21.81s
+[ 10/64] ex009_n200_d6_s0.05_qb0.01_seed1  -> true=6 pa=6 argmin=6 1se=6 23.08s
+[ 11/64] ex010_n200_d6_s0.10_qb0.01_seed0  -> true=6 pa=6 argmin=6 1se=6 19.47s
+[ 12/64] ex011_n200_d6_s0.10_qb0.01_seed1  -> true=6 pa=6 argmin=6 1se=6 21.53s
+[ 13/64] ex012_n200_d10_s0.02_qb0.01_seed0  /vf/users/NNT/Zoe/ICQF_df/icqf/bcv.py:169: UserWarning: make_bcv_masks: too few per-class entries to stratify; using plain KFold.
+  warnings.warn("make_bcv_masks: too few per-class entries to stratify; using plain KFold.")
+/vf/users/NNT/Zoe/ICQF_df/icqf/bcv.py:169: UserWarning: make_bcv_masks: too few per-class entries to stratify; using plain KFold.
+  warnings.warn("make_bcv_masks: too few per-class entries to stratify; using plain KFold.")
+-> true=10 pa=9 argmin=12 1se=12 27.02s
+[ 14/64] ex013_n200_d10_s0.02_qb0.01_seed1  -> true=10 pa=9 argmin=12 1se=11 27.25s
+[ 15/64] ex014_n200_d10_s0.05_qb0.01_seed0  -> true=10 pa=8 argmin=9 1se=9 26.67s
+[ 16/64] ex015_n200_d10_s0.05_qb0.01_seed1  -> true=10 pa=8 argmin=10 1se=10 27.95s
+[ 17/64] ex016_n200_d10_s0.10_qb0.01_seed0  -> true=10 pa=7 argmin=8 1se=8 41.01s
+[ 18/64] ex017_n200_d10_s0.10_qb0.01_seed1  -> true=10 pa=8 argmin=9 1se=9 25.81s
+[ 19/64] ex018_n350_d3_s0.02_qb0.01_seed0  -> true=3 pa=3 argmin=3 1se=3 20.24s
+[ 20/64] ex019_n350_d3_s0.02_qb0.01_seed1  -> true=3 pa=3 argmin=3 1se=3 20.82s
+[ 21/64] ex020_n350_d3_s0.05_qb0.01_seed0  -> true=3 pa=3 argmin=3 1se=3 16.42s
+[ 22/64] ex021_n350_d3_s0.05_qb0.01_seed1  -> true=3 pa=3 argmin=3 1se=3 18.69s
+[ 23/64] ex022_n350_d3_s0.10_qb0.01_seed0  -> true=3 pa=3 argmin=3 1se=3 13.42s
+[ 24/64] ex023_n350_d3_s0.10_qb0.01_seed1  -> true=3 pa=3 argmin=3 1se=3 15.10s
+[ 25/64] ex024_n350_d6_s0.02_qb0.01_seed0  -> true=6 pa=6 argmin=7 1se=6 30.06s
+[ 26/64] ex025_n350_d6_s0.02_qb0.01_seed1  -> true=6 pa=6 argmin=6 1se=6 29.71s
+[ 27/64] ex026_n350_d6_s0.05_qb0.01_seed0  -> true=6 pa=6 argmin=6 1se=6 26.31s
+[ 28/64] ex027_n350_d6_s0.05_qb0.01_seed1  -> true=6 pa=6 argmin=6 1se=6 28.27s
+[ 29/64] ex028_n350_d6_s0.10_qb0.01_seed0  -> true=6 pa=6 argmin=6 1se=6 21.32s
+[ 30/64] ex029_n350_d6_s0.10_qb0.01_seed1  -> true=6 pa=6 argmin=6 1se=6 38.85s
+[ 31/64] ex030_n350_d10_s0.02_qb0.01_seed0  -> true=10 pa=8 argmin=13 1se=13 33.35s
+[ 32/64] ex031_n350_d10_s0.02_qb0.01_seed1  -> true=10 pa=9 argmin=12 1se=11 35.21s
+[ 33/64] ex032_n350_d10_s0.05_qb0.01_seed0  -> true=10 pa=8 argmin=10 1se=10 34.77s
+[ 34/64] ex033_n350_d10_s0.05_qb0.01_seed1  -> true=10 pa=9 argmin=10 1se=10 34.60s
+[ 35/64] ex034_n350_d10_s0.10_qb0.01_seed0  -> true=10 pa=7 argmin=8 1se=8 27.45s
+[ 36/64] ex035_n350_d10_s0.10_qb0.01_seed1  -> true=10 pa=9 argmin=9 1se=9 30.06s
+[ 37/64] ex036_n500_d3_s0.02_qb0.01_seed0  -> true=3 pa=3 argmin=3 1se=3 20.34s
+[ 38/64] ex037_n500_d3_s0.02_qb0.01_seed1  -> true=3 pa=3 argmin=3 1se=3 22.39s
+[ 39/64] ex038_n500_d3_s0.05_qb0.01_seed0  -> true=3 pa=3 argmin=3 1se=3 16.45s
+[ 40/64] ex039_n500_d3_s0.05_qb0.01_seed1  -> true=3 pa=3 argmin=3 1se=3 20.12s
+[ 41/64] ex040_n500_d3_s0.10_qb0.01_seed0  -> true=3 pa=3 argmin=3 1se=3 14.26s
+[ 42/64] ex041_n500_d3_s0.10_qb0.01_seed1  -> true=3 pa=3 argmin=3 1se=3 12.83s
+[ 43/64] ex042_n500_d6_s0.02_qb0.01_seed0  -> true=6 pa=6 argmin=8 1se=8 35.50s
+[ 44/64] ex043_n500_d6_s0.02_qb0.01_seed1  -> true=6 pa=6 argmin=8 1se=7 35.72s
+[ 45/64] ex044_n500_d6_s0.05_qb0.01_seed0  -> true=6 pa=6 argmin=6 1se=6 68.26s
+[ 46/64] ex045_n500_d6_s0.05_qb0.01_seed1  -> true=6 pa=6 argmin=7 1se=6 49.88s
+[ 47/64] ex046_n500_d6_s0.10_qb0.01_seed0  -> true=6 pa=6 argmin=6 1se=6 38.06s
+[ 48/64] ex047_n500_d6_s0.10_qb0.01_seed1  -> true=6 pa=6 argmin=6 1se=6 30.71s
+[ 49/64] ex048_n500_d10_s0.02_qb0.01_seed0  -> true=10 pa=9 argmin=11 1se=10 44.48s
+[ 50/64] ex049_n500_d10_s0.02_qb0.01_seed1  -> true=10 pa=10 argmin=11 1se=11 49.38s
+[ 51/64] ex050_n500_d10_s0.05_qb0.01_seed0  -> true=10 pa=9 argmin=10 1se=10 42.76s
+[ 52/64] ex051_n500_d10_s0.05_qb0.01_seed1  -> true=10 pa=10 argmin=10 1se=10 44.26s
+[ 53/64] ex052_n500_d10_s0.10_qb0.01_seed0  -> true=10 pa=7 argmin=9 1se=9 33.49s
+[ 54/64] ex053_n500_d10_s0.10_qb0.01_seed1  -> true=10 pa=9 argmin=10 1se=10 40.33s
+[ 55/64] ex054_n350_d6_s0.05_qb0.001_seed0  -> true=6 pa=6 argmin=6 1se=6 31.69s
+[ 56/64] ex055_n350_d6_s0.05_qb0.001_seed1  -> true=6 pa=6 argmin=6 1se=6 29.35s
+[ 57/64] ex056_n350_d6_s0.05_qb0.01_seed0  -> true=6 pa=6 argmin=6 1se=6 28.84s
+[ 58/64] ex057_n350_d6_s0.05_qb0.01_seed1  -> true=6 pa=6 argmin=6 1se=6 56.98s
+[ 59/64] ex058_n350_d6_s0.05_qb0.05_seed0  -> true=6 pa=6 argmin=6 1se=6 37.53s
+[ 60/64] ex059_n350_d6_s0.05_qb0.05_seed1  -> true=6 pa=6 argmin=6 1se=6 88.70s
+[ 61/64] ex060_n350_d6_s0.05_qb0.1_seed0  -> true=6 pa=6 argmin=6 1se=6 37.80s
+[ 62/64] ex061_n350_d6_s0.05_qb0.1_seed1  -> true=6 pa=6 argmin=6 1se=6 48.82s
+[ 63/64] ex062_n350_d6_s0.05_qb0.5_seed0  -> true=6 pa=6 argmin=6 1se=6 56.58s
+[ 64/64] ex063_n350_d6_s0.05_qb0.5_seed1  -> true=6 pa=6 argmin=10 1se=9 39.71s
+
+Wrote index (64 examples) and curves (650 points) to /vf/users/NNT/Zoe/ICQF_df/testing/results
+
+=== recovery summary ===
+argmin correct: 70.3%   1-SE correct: 76.6%
+mean |err| argmin: 0.50   1-SE: 0.36

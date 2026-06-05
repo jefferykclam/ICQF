@@ -1,163 +1,163 @@
-# ICQF (beta version)
-beta version (0.0-b.1) for ICQF package
+# ICQF
 
-### What is ICQF
+ICQF factorizes an observed matrix `M ≈ W Qᵀ` (optionally adjusting for fully observed confounds `C` via `M ≈ W Qᵀ + C Qcᵀ`) under nonnegativity and optional upper-bound (interval) constraints, using an ADMM-style solver. Missing entries are handled natively: `NaN` means "unobserved" and is simply skipped in the loss.
 
----
+## Install / requirements
 
-**ICQF** stands for <u>**I**nterpretability **C**onstrained **Q**uestionnaire **F**actorization</u>. 
+The package is pure-Python except for one small Cython coordinate-descent kernel (`_cdnmf_fast_cy`). It is **compiled to a native extension at install time**, so the *runtime* needs neither Cython nor a C compiler — only a C compiler at *install* time (already standard on most systems; `gcc`/`clang`).
 
-It is a matrix decomposition algorithm designed for questionnaire dataset. Given a matrix $M$ storing questionnaire responses (#subjects $\times$ #question items), ICQF decomposes $M$ into $M \approx WQ^T$:
+Install with [uv](https://docs.astral.sh/uv/):
 
-<img src="README.assets/image-20230721094555872.png" alt="image-20230721094555872" style="zoom:20%;" />
+```bash
+# from this folder
+uv pip install .
 
-#### Who to try?
+# or, for an editable/dev install
+uv pip install -e .
 
-You may try ICQF if you wish to:
-
-- perform exploratory matrix analysis with **<u>more interpretable</u>** outcomes
-- perform tabular data analysis **<u>fully automatically</u>** in a data-driven way
-- perform dimension reduction for non-negative tabular data, where **<u>auxiliary variables</u>** should be incorporated
-- work on research development and you are looking for a module-based python implementation
-- [coming soon] analyze **<u>multiple questionnaires</u>** simultaneously, where subject lists from questionnaires are partially overlapped.
-
-#### ICQF
-
-- is provably **convergent** with minimal hyper-parameters selection
-- focuses on the **interpretabiltiy** of $W$, $Q$, which is enhanced via **(i)** sparsity control; **(ii)** constraining non-negativity of $W, Q$; **(iii)** constraining the range of $W, Q$ &  $(WQ^T)$ entries
-- is designed for, but not limited to, **questionnaire** dataset
-
-#### It supports*
-
-- imputation (missing entries in $M$)
-
-- bounded constraints on entries of $W$, $Q$ and the reconstructed matrix $WQ^T$
-
-- regularization on $W$ and $Q$ (sparsity and smoothness)
-
-- automatic detection of optimal latent dimension (dimension of $W, Q$)
-
-- automatic detection of regularization strength
-
-- inclusion of auxiliary variables $C$ (or confound controlling)
-
-  > Auxiliary variables ($C$) are known variables to which the variable of interest ($W$) is approximately related. Examples of auxiliary variables such as Age, Sex of subjects, can be modeled by ICQF during the decomposition.
-
-<img src="README.assets/image-20230721095253704.png" alt="image-20230721095253704" style="zoom:20%;" />
-
-### Getting start
-
----
-
-#### Installation
-
-The required packages are recored in `environment.yml` file. Run the following command line in terminal to setup a new conda environment `ICQF`:
-
-```
-conda env create -f environment.yml
+# optional extras for the demo notebooks (scipy, matplotlib, jupyter)
+uv pip install ".[examples]"
 ```
 
-One may use `mamba` instead to create the `ICQF` environment
-
-```
-mamba env create -f environment.yml
-```
-
-### Quick Example
-
----
-
-We first generate an synthetic example using `simulation` function from `util.generate_synthetic`:
+Runtime dependencies (`numpy`, `pandas`, `scikit-learn`, `tqdm`) are resolved
+automatically; Cython and NumPy headers are pulled into an isolated build
+environment by uv and are *not* installed into your project. After installing:
 
 ```python
-true_W, true_Q, _, M_clean, M, _ = simulation(200, 100)
+from icqf import ICQF, MatrixData, estimate_dimension
 ```
 
-<img src="README.assets/image-20230721143206049.png" alt="image-20230721143206049" style="zoom:50%;" />
+> **Note on platforms:** the compiled `.so`/`.pyd` is platform- and
+> Python-version-specific, not universal. That's fine — building from source
+> (the command above) recompiles the kernel for whatever machine you install
+> on. The `.pyx` source ships in the sdist so each install builds its own.
+> If a checkout has *not* been built (e.g. running straight from the source
+> tree), the import falls back to `pyximport`, which compiles the kernel on
+> first import and does require Cython + a compiler at runtime.
 
-The generated tabular data matrix $M$ has dimension $200 \times 100$ ($200$ subjects answering $100$ questions) and the intrinsic latent diemnsion is $10$.  The matrix $W$ and $Q$ are often called the {**latent factors**, **subject embedding**} and respectively,  {**factor loadings**, **question embedding**}, of the synthetic questionnaire $M$.
-
-We first construct a dataclass object `matrix_class` to store data matrix $M$:
+## Usage
 
 ```python
-MF_data = matrix_class(M=M)
+import pandas as pd
+from icqf import ICQF, MatrixData
+
+# samples x features; NaN = unobserved
+M_df = pd.read_csv("my_data.csv", index_col=0)
+
+data  = MatrixData.from_frames(M_df)          # validate + package
+model = ICQF(n_components=5, random_state=0)
+state, history = model.fit_transform(data)
+
+state.W_df   # (samples  x factors)  subject scores
+state.Q_df   # (features x factors)  item loadings
+state.Z_df   # (samples  x features) bounded reconstruction
+
+# apply the learned Q to new rows (Q stays fixed, only W/Z are inferred)
+new_state, _ = model.transform(MatrixData.from_frames(M_new_df))
 ```
 
-which automatically perform the following:
+### Estimating the embedding dimension (BCV)
 
-- Check -- existence of NaN entries -- If `True`, create `nan_mask` matrix identifying the location of NaN entries
-- Check -- existence of negative entries -- If `True`, map the entries to $0$
-- [optional, if auxiliary variables are given]
-  Check -- existence of NaN entries -- If `True`, perform simple imputation to fill the missing entries in the given auxiliary variables `confound`.
-- [optional, if auxiliary variables are given]
-  Translate & rescale the `confound` to $[0,1]$ range.
-
-To factorize for $M$, we initialize a ICQF model with [optional] bounded constraints on $W$ [`W_upperbd=(True, 1.0)`], $Q$ [`Q_upperbd=(True, 100)`] and the reconstructed matrix $M$ [`M_upperbd=(True, np.max(MF_data.M))`]. We set the latent dimension = 10 with `n_components`: 
+Dimension is chosen by **bi-cross-validation**: held-out observed entries are
+masked to `NaN`, ICQF is fit on the rest, and reconstruction error is measured
+on the held-out entries. The rank that minimizes held-out error (or the elbow of
+the curve) is the estimate.
 
 ```python
-clf = ICQF(n_components=10,
-           W_upperbd=(True, 1.0),
-           Q_upperbd=(True, 100),
-           M_upperbd=(True, np.max(MF_data.M))
-          )
+from icqf import estimate_dimension
+
+# Auto: parallel analysis centers the rank-search grid, the SE rule picks best_k.
+results_df, summary_df, best_k = estimate_dimension(
+    M_df,
+    dimension_list=None,        # None -> grid centered on the PA estimate
+    J=10, repeat=2, random_state=42,
+    icqf_kwargs=dict(W_beta=0.1, Q_beta=0.1, max_iter=200),
+)
+print(best_k)
 ```
 
-After initializing the model, we can perform ICQF by
+You can still pass an explicit `dimension_list=[2, 3, 4, 5, 6, 8, 10]` to sweep a
+fixed range.
+
+**Two refinements (both optional, both on by default):**
+
+- **Parallel analysis to center the search.** A permutation parallel analysis on
+  the data matrix gives a cheap first guess of the rank; when
+  `dimension_list is None` the search grid is a window `pa_dim ± pa_window`
+  centered on it, instead of an arbitrary wide sweep. (`parallel_analysis`,
+  `grid_from_parallel_analysis`.)
+- **The SE rule for selection.** The literal argmin of a noisy CV curve jumps
+  around in flat regions. The 1-SE rule (Breiman et al. 1984, *CART*) takes the
+  *simplest* rank whose mean CV loss is within one standard error of the
+  minimum. Because the same folds score every rank, the SE is computed
+  **fold-paired** (each fold's curve is centered before taking the SE), which
+  removes the fold-difficulty offset and gives a tighter, fairer band. The
+  tolerance scales with `se_mult` (`1.0` = classic 1-SE, `0.5` = softer,
+  `0.0` = argmin). Toggle with `use_1se`, `paired_se`, `se_mult`.
+  (`select_dimension`.)
+
+**Threads.** Each ICQF fit leans on multi-threaded BLAS. `n_threads="auto"` (default) caps it at *all cores but one* so the machine stays responsive; pass an int to pin a specific count, or `None` to leave the global pool untouched.
+
+This runs **serially over folds in the current process** — there is no cluster/swarm dispatch. For a single survey-sized matrix the full sweep is fast enough to run inline; large-scale parallel dispatch is intentionally left out of this public standalone.
+
+#### Also tuning the regularization (`W_beta`, `Q_beta`) by CV
+
+`estimate_dimension` fixes the penalties (from `icqf_kwargs`) and sweeps only the rank. To choose the dimension **and** the L1 penalties together, use `estimate_dimension_grid`, which sweeps the full grid `dimension_list × W_beta_list × Q_beta_list` on shared folds:
 
 ```python
-MF_data, loss = clf.fit_transform(MF_data)
+from icqf import estimate_dimension_grid
+
+results_df, summary_df, best = estimate_dimension_grid(
+    M_df,
+    dimension_list=[3, 4, 5, 6, 8],
+    W_beta_list=[0.001, 0.01, 0.1],
+    Q_beta_list=[0.001, 0.01, 0.1, 0.5],
+    J=10, repeat=2, random_state=42,
+    icqf_kwargs=dict(regularizer=1, max_iter=200),
+)
+print(best)   # {"n_components": ..., "W_beta": ..., "Q_beta": ...}
+# summary_df: one row per (n_components, W_beta, Q_beta) with paired-SE columns
 ```
 
-The matrix factorization results can be accessed via
+The fold masks are built **once** and reused across every `(k, W_beta, Q_beta)`, so the comparison is on identical splits. The same 1-SE machinery applies, with the standard error computed **per configuration**; on the joint grid "simplest" means smallest rank first, then most-regularized (largest `W_beta`, then `Q_beta`). The masks depend only on `(M_df, J, repeat, random_state)` — never on the betas or ranks — so both functions return them via `summary_df.attrs["folds"]` (also buildable with `build_bcv_folds`); pass them back through `folds=` to extend a sweep on the *same* splits:
 
 ```python
-W = MF_data.W
-Q = MF_data.Q
+folds = summary_df.attrs["folds"]            # reuse identical folds
+_, more, _ = estimate_dimension_grid(M_df, [7, 9], W_beta_list=[0.01], Q_beta_list=[0.01], folds=folds)
 ```
 
-Qualitatively, we can compare with the ground-truth by visualizing them using `show_synthetic_result` function:
+### Confounds: additive baseline vs. regressing out
+
+If you pass `C_df`, ICQF fits `M ≈ W Qᵀ + C Qcᵀ` and treats the confound as a
+**non-negative additive baseline** `C Qcᵀ ≥ 0`, so the part the factors explain,
+`W Qᵀ = Z − C Qcᵀ ≥ 0`, stays inside the data's non-negative range. This differs
+from the conventional "regress the confound out first, then factorize the
+residuals" approach, whose residuals are mean-centered and routinely go negative.
+
+Because the confound loadings are non-negative, a single `age` column can only
+push the baseline *up* with age. To allow a *decreasing* trend too, encode the
+complement: use `C = [intercept, age, 1 − age]`. Non-negative combinations then
+span any straight-line baseline (constant, increasing, or decreasing). Note also
+that the non-negative baseline behaves like a **lower envelope** (≈ per-item
+minimum), not a conditional mean — a few zero entries pull it toward 0; a richer
+basis and lighter `Q_beta` loosen this. Section 6 of the demo notebook builds a
+confounded example (via `_generate_examples.py`) and visualizes the contrast.
+
+See `demo_ICQF.ipynb` for a worked, runnable walkthrough.
+
+## Layout
 
 ```
-show_synthetic_result(MF_data, true_W, true_Q)
+ICQF_df/
+├── README.md
+├── demo_ICQF.ipynb           # training, transforming, BCV, confound handling
+├── _generate_examples.py     # synthetic-data helpers (used by the notebook's confound demo)
+├── testing/                  # verification scripts & BCV studies (not part of the library)
+└── icqf/
+    ├── __init__.py
+    ├── ICQF.py              # the model (fit_transform / transform)
+    ├── utils_data.py        # MatrixData (input) + FactorState (output)
+    ├── utils_SVD.py         # NNDSVD initialization
+    ├── bcv.py               # single-process BCV: PA grid + fold-paired SE rule
+    └── _cdnmf_fast_cy.pyx   # Cython coordinate-descent kernel (compiled on import)
 ```
-
-<img src="README.assets/image-20230721143223896.png" alt="image-20230721143223896" style="zoom:50%;" />
-
-### Automatic configuration detection
-
----
-
-If you are uncertain about the appropriate latent dimension (`n_components`) and/or the strength of regularization, you can conveniently set `n_components=None`. In such cases, ICQF will internally execute the function `detect_dimension` to automatically identify the optimal latent dimension and the corresponding regularization strength.
-
-```python
-clf = ICQF(n_components=None,
-           W_upperbd=(True, 1.0),
-           Q_upperbd=(True, 100),
-           M_upperbd=(True, np.max(MF_data.M))
-          )
-MF_data, loss = clf.fit_transform(MF_data)
-```
-
-After the detection, the profile of the blockwise cross-validation will be visualized:
-
-<img src="README.assets/image-20230724102854510.png" alt="image-20230724102854510"  width="500;" />
-
-The elbows of the reconstruction error indicate that the optimal configuration would be 
-
-- latent dimension = 10
-- $L_1$ regularization strength for $W$ and $Q$ : (0.001, 0.001)
-
-
-
-### Links
-
----
-
-For more examples, please visit [Example](./EXAMPLE.md) and the [jupyter notebook](./demonstration.ipynb).
-
-For the full documentation of the python module ICQF, please visit [Documentation](./DOCUMENTATION.md).
-
-
-
-### Reference
-

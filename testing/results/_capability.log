@@ -1,0 +1,40 @@
+CPU count = 192   ADMM threads = 191   quick = False
+[ 1/20] baseline       n=300   p=80   true_dim=8   sigma=0.05   -> est_1se=8 (pa=8, argmin=8)  27.75s
+[ 2/20] vary_n         n=200   p=80   true_dim=8   sigma=0.05   -> est_1se=8 (pa=7, argmin=8)  23.48s
+[ 3/20] vary_n         n=300   p=80   true_dim=8   sigma=0.05   -> est_1se=8 (pa=8, argmin=8)  29.09s
+[ 4/20] vary_n         n=400   p=80   true_dim=8   sigma=0.05   -> est_1se=8 (pa=8, argmin=8)  33.42s
+[ 5/20] vary_n         n=500   p=80   true_dim=8   sigma=0.05   -> est_1se=8 (pa=8, argmin=8)  42.00s
+[ 6/20] vary_true_dim  n=300   p=80   true_dim=2   sigma=0.05   -> est_1se=2 (pa=2, argmin=2)  10.53s
+[ 7/20] vary_true_dim  n=300   p=80   true_dim=5   sigma=0.05   -> est_1se=5 (pa=5, argmin=5)  20.32s
+[ 8/20] vary_true_dim  n=300   p=80   true_dim=10  sigma=0.05   -> est_1se=10 (pa=10, argmin=10)  31.77s
+[ 9/20] vary_true_dim  n=300   p=80   true_dim=20  sigma=0.05   -> est_1se=16 (pa=12, argmin=16)  31.81s
+[10/20] vary_true_dim  n=300   p=80   true_dim=40  sigma=0.05   /vf/users/NNT/Zoe/ICQF_df/icqf/bcv.py:169: UserWarning: make_bcv_masks: too few per-class entries to stratify; using plain KFold.
+  warnings.warn("make_bcv_masks: too few per-class entries to stratify; using plain KFold.")
+/vf/users/NNT/Zoe/ICQF_df/icqf/bcv.py:169: UserWarning: make_bcv_masks: too few per-class entries to stratify; using plain KFold.
+  warnings.warn("make_bcv_masks: too few per-class entries to stratify; using plain KFold.")
+-> est_1se=11 (pa=8, argmin=11)  24.87s
+[11/20] n_near_p       n=200   p=300  true_dim=8   sigma=0.05   -> est_1se=8 (pa=8, argmin=8)  57.52s
+[12/20] n_near_p       n=300   p=300  true_dim=8   sigma=0.05   -> est_1se=8 (pa=8, argmin=8)  120.97s
+[13/20] n_near_p       n=400   p=300  true_dim=8   sigma=0.05   -> est_1se=8 (pa=8, argmin=9)  100.28s
+[14/20] n_near_p       n=500   p=300  true_dim=8   sigma=0.05   -> est_1se=9 (pa=8, argmin=10)  116.75s
+[15/20] vary_sigma     n=300   p=80   true_dim=8   sigma=0.0    /vf/users/NNT/Zoe/ICQF_df/icqf/bcv.py:169: UserWarning: make_bcv_masks: too few per-class entries to stratify; using plain KFold.
+  warnings.warn("make_bcv_masks: too few per-class entries to stratify; using plain KFold.")
+/vf/users/NNT/Zoe/ICQF_df/icqf/bcv.py:169: UserWarning: make_bcv_masks: too few per-class entries to stratify; using plain KFold.
+  warnings.warn("make_bcv_masks: too few per-class entries to stratify; using plain KFold.")
+-> est_1se=11 (pa=8, argmin=11)  28.34s
+[16/20] vary_sigma     n=300   p=80   true_dim=8   sigma=0.02   -> est_1se=9 (pa=8, argmin=10)  28.31s
+[17/20] vary_sigma     n=300   p=80   true_dim=8   sigma=0.05   -> est_1se=8 (pa=8, argmin=9)  28.79s
+[18/20] vary_sigma     n=300   p=80   true_dim=8   sigma=0.1    -> est_1se=8 (pa=8, argmin=8)  24.79s
+[19/20] vary_sigma     n=300   p=80   true_dim=8   sigma=0.2    -> est_1se=2 (pa=6, argmin=2)  13.03s
+[20/20] vary_sigma     n=300   p=80   true_dim=8   sigma=0.4    -> est_1se=2 (pa=6, argmin=2)  10.49s
+
+Wrote 20 rows to /vf/users/NNT/Zoe/ICQF_df/testing/results/bcv_capability.csv
+
+=== recovery accuracy by sweep ===
+               n_cond   acc_1se  mean_abs_err  mean_time_s
+sweep                                                     
+baseline            1  1.000000      0.000000    27.754799
+n_near_p            4  0.750000      0.250000    98.878765
+vary_n              4  1.000000      0.000000    31.996701
+vary_sigma          6  0.333333      2.666667    22.291038
+vary_true_dim       5  0.600000      6.600000    23.861429
